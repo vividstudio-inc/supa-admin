@@ -7,9 +7,13 @@
     ".": "./vitest.config.js",
     "./node": "./vitest.config.no-setup.js",
     "./no-setup": "./vitest.config.no-setup.js",
-    "./setup": "./setup.ts"
+    "./setup": "./setup.ts",
+    "./coverage": "./coverage.js",
+    "./supabase-mock": "./supabase-mock.ts"
   },
   "files": [
+    "coverage.js",
+    "supabase-mock.ts",
     "vitest.config.js",
     "vitest.config.no-setup.js",
     "setup.ts"
@@ -20,6 +24,7 @@
   "devDependencies": {
     "@supa-admin/tsconfig": "workspace:*",
     "typescript": "~5.8.3",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "ws": "^8.18.3"
   }
 }

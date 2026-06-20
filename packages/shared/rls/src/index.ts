@@ -1,6 +1,9 @@
 import "server-only";
 import { createMetaServerClient } from "@supa-admin/auth/server";
-import type { RolePermission } from "@supa-admin/projections";
+import {
+  type RolePermission,
+  resolvePermissionsRecord,
+} from "@supa-admin/projections";
 import { createTargetAdminClient } from "@supa-admin/supabase-target/admin";
 import { createHash } from "crypto";
 import { generateRlsSql } from "./generate-sql";
@@ -92,35 +95,22 @@ export async function buildAppMetadataPermissions(
     .eq("user_id", userId)
     .eq("connection_id", connectionId);
 
-  const result: Record<string, Record<string, boolean>> = {};
-
-  for (const p of perms) {
-    const entry = result[p.table_name] ?? {
-      can_read: false,
-      can_create: false,
-      can_update: false,
-      can_delete: false,
-    };
-    entry.can_read ||= p.can_read;
-    entry.can_create ||= p.can_create;
-    entry.can_update ||= p.can_update;
-    entry.can_delete ||= p.can_delete;
-    result[p.table_name] = entry;
-  }
-
-  for (const ov of overrides ?? []) {
-    const entry = result[ov.table_name] ?? {
-      can_read: false,
-      can_create: false,
-      can_update: false,
-      can_delete: false,
-    };
-    if (ov.can_read !== null) entry.can_read = ov.can_read;
-    if (ov.can_create !== null) entry.can_create = ov.can_create;
-    if (ov.can_update !== null) entry.can_update = ov.can_update;
-    if (ov.can_delete !== null) entry.can_delete = ov.can_delete;
-    result[ov.table_name] = entry;
-  }
+  const result = resolvePermissionsRecord(
+    perms.map((p) => ({
+      table_name: p.table_name,
+      can_read: p.can_read,
+      can_create: p.can_create,
+      can_update: p.can_update,
+      can_delete: p.can_delete,
+    })),
+    (overrides ?? []).map((ov) => ({
+      table_name: ov.table_name,
+      can_read: ov.can_read,
+      can_create: ov.can_create,
+      can_update: ov.can_update,
+      can_delete: ov.can_delete,
+    })),
+  );
 
   return { permissions: result };
 }

@@ -9,7 +9,11 @@
     "./permissions": "./src/permissions.ts",
     "./connection-keys": "./src/connection-keys.ts"
   },
-  "scripts": { "typecheck": "tsc --noEmit" },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
   "dependencies": {
     "@supa-admin/crypto": "workspace:*",
     "@supa-admin/projections": "workspace:*",
@@ -19,8 +23,10 @@
   },
   "devDependencies": {
     "@supa-admin/tsconfig": "workspace:*",
+    "@supa-admin/vitest-config": "workspace:*",
     "@types/node": "^20",
     "next": "16.2.9",
-    "typescript": "~5.8.3"
+    "typescript": "~5.8.3",
+    "vitest": "^3.2.4"
   }
 }

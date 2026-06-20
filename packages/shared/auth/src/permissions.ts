@@ -1,6 +1,8 @@
 import "server-only";
 import {
-  mergePermissions,
+  aggregateRolePermissions,
+  applyPermissionOverrides,
+  buildFullAccessPermissions,
   type PlatformRole,
   type ResolvedPermission,
   type TablePermission,
@@ -76,14 +78,10 @@ export async function resolveUserPermissions(
       .select("table_name")
       .eq("connection_id", connectionId);
 
-    return (tables ?? []).map((t) => ({
-      connection_id: connectionId,
-      table_name: t.table_name,
-      can_read: true,
-      can_create: true,
-      can_update: true,
-      can_delete: true,
-    }));
+    return buildFullAccessPermissions(
+      connectionId,
+      (tables ?? []).map((t) => t.table_name),
+    );
   }
 
   const { data: userRoles } = await service
@@ -116,40 +114,11 @@ export async function resolveUserPermissions(
     .eq("user_id", userId)
     .eq("connection_id", connectionId);
 
-  const permMap = new Map<string, TablePermission>();
+  const permMap = aggregateRolePermissions(rolePerms);
 
-  for (const rp of rolePerms) {
-    const existing = permMap.get(rp.table_name);
-    const merged: TablePermission = existing
-      ? {
-          can_read: existing.can_read || rp.can_read,
-          can_create: existing.can_create || rp.can_create,
-          can_update: existing.can_update || rp.can_update,
-          can_delete: existing.can_delete || rp.can_delete,
-        }
-      : {
-          can_read: rp.can_read,
-          can_create: rp.can_create,
-          can_update: rp.can_update,
-          can_delete: rp.can_delete,
-        };
-    permMap.set(rp.table_name, merged);
-  }
+  const resolvedMap = applyPermissionOverrides(permMap, overrides ?? []);
 
-  for (const ov of overrides ?? []) {
-    const existing = permMap.get(ov.table_name) ?? null;
-    permMap.set(
-      ov.table_name,
-      mergePermissions(existing, {
-        can_read: ov.can_read ?? undefined,
-        can_create: ov.can_create ?? undefined,
-        can_update: ov.can_update ?? undefined,
-        can_delete: ov.can_delete ?? undefined,
-      }),
-    );
-  }
-
-  return Array.from(permMap.entries()).map(([table_name, perm]) => ({
+  return Array.from(resolvedMap.entries()).map(([table_name, perm]) => ({
     connection_id: connectionId,
     table_name,
     ...perm,

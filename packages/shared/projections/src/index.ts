@@ -100,6 +100,117 @@ export function mergePermissions(
   };
 }
 
+export type PermissionRow = {
+  table_name: string;
+  can_read: boolean;
+  can_create: boolean;
+  can_update: boolean;
+  can_delete: boolean;
+};
+
+export type PermissionOverrideRow = {
+  table_name: string;
+  can_read: boolean | null;
+  can_create: boolean | null;
+  can_update: boolean | null;
+  can_delete: boolean | null;
+};
+
+/** OR-merge role permissions for the same table across multiple roles. */
+export function aggregateRolePermissions(
+  rolePerms: PermissionRow[],
+): Map<string, TablePermission> {
+  const permMap = new Map<string, TablePermission>();
+
+  for (const rp of rolePerms) {
+    const existing = permMap.get(rp.table_name);
+    permMap.set(
+      rp.table_name,
+      existing
+        ? {
+            can_read: existing.can_read || rp.can_read,
+            can_create: existing.can_create || rp.can_create,
+            can_update: existing.can_update || rp.can_update,
+            can_delete: existing.can_delete || rp.can_delete,
+          }
+        : {
+            can_read: rp.can_read,
+            can_create: rp.can_create,
+            can_update: rp.can_update,
+            can_delete: rp.can_delete,
+          },
+    );
+  }
+
+  return permMap;
+}
+
+/** Apply user-level overrides (null = inherit from role aggregate). */
+export function applyPermissionOverrides(
+  permMap: Map<string, TablePermission>,
+  overrides: PermissionOverrideRow[],
+): Map<string, TablePermission> {
+  const result = new Map(permMap);
+
+  for (const ov of overrides) {
+    const existing = result.get(ov.table_name) ?? null;
+    result.set(
+      ov.table_name,
+      mergePermissions(existing, {
+        can_read: ov.can_read ?? undefined,
+        can_create: ov.can_create ?? undefined,
+        can_update: ov.can_update ?? undefined,
+        can_delete: ov.can_delete ?? undefined,
+      }),
+    );
+  }
+
+  return result;
+}
+
+export function buildFullAccessPermissions(
+  connectionId: string,
+  tableNames: string[],
+): ResolvedPermission[] {
+  return tableNames.map((table_name) => ({
+    connection_id: connectionId,
+    table_name,
+    can_read: true,
+    can_create: true,
+    can_update: true,
+    can_delete: true,
+  }));
+}
+
+export function resolvePermissionsFromRows(
+  connectionId: string,
+  rolePerms: PermissionRow[],
+  overrides: PermissionOverrideRow[],
+): ResolvedPermission[] {
+  const permMap = applyPermissionOverrides(
+    aggregateRolePermissions(rolePerms),
+    overrides,
+  );
+
+  return Array.from(permMap.entries()).map(([table_name, perm]) => ({
+    connection_id: connectionId,
+    table_name,
+    ...perm,
+  }));
+}
+
+/** JWT app_metadata.permissions shape used by Target RLS. */
+export function resolvePermissionsRecord(
+  rolePerms: PermissionRow[],
+  overrides: PermissionOverrideRow[],
+): Record<string, TablePermission> {
+  const permMap = applyPermissionOverrides(
+    aggregateRolePermissions(rolePerms),
+    overrides,
+  );
+  return Object.fromEntries(permMap);
+}
+
 export function isTextColumn(dataType: string): boolean {
   return [
     "text",

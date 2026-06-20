@@ -4,7 +4,11 @@
   "version": "0.1.0",
   "type": "module",
   "exports": { ".": "./src/index.ts" },
-  "scripts": { "typecheck": "tsc --noEmit" },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
   "dependencies": {
     "@supa-admin/auth": "workspace:*",
     "@supa-admin/crypto": "workspace:*",
@@ -14,6 +18,8 @@
   },
   "devDependencies": {
     "@supa-admin/tsconfig": "workspace:*",
-    "typescript": "~5.8.3"
+    "@supa-admin/vitest-config": "workspace:*",
+    "typescript": "~5.8.3",
+    "vitest": "^3.2.4"
   }
 }

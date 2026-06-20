@@ -1,8 +1,10 @@
 import { defineConfig } from "vitest/config";
+import { coverageConfig } from "./coverage.js";
 
 export default defineConfig({
   test: {
     globals: true,
+    include: ["__tests__/**/*.test.ts"],
     fileParallelism: true,
     pool: "threads",
     poolOptions: {
@@ -16,11 +18,6 @@ export default defineConfig({
     env: {
       NODE_ENV: "test",
     },
-    coverage: {
-      provider: "v8",
-      reporter: ["text-summary", "lcov"],
-      include: ["src/**/*.ts"],
-      exclude: ["node_modules/**", "dist/**"],
-    },
+    coverage: coverageConfig,
   },
 });

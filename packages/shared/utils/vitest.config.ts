@@ -1,9 +1,4 @@
-import { defineConfig } from "vitest/config";
+import sharedConfig from "@supa-admin/vitest-config/no-setup";
+import { defineConfig, mergeConfig } from "vitest/config";
 
-export default defineConfig({
-  test: {
-    globals: true,
-    environment: "node",
-    include: ["__tests__/**/*.test.ts"],
-  },
-});
+export default mergeConfig(sharedConfig, defineConfig({}));

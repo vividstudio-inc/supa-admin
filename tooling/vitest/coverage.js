@@ -1,0 +1,26 @@
+/** @type {import("vitest/config").CoverageV8Options} */
+export const coverageConfig = {
+  provider: "v8",
+  reporter: ["text-summary", "lcov"],
+  include: ["src/**/*.ts", "lib/**/*.ts", "app/**/*.ts", "components/**/*.tsx"],
+  exclude: [
+    "**/components/ui/**",
+    "packages/shared/ui/**",
+    "app/**",
+    "i18n/**",
+    "hooks/**",
+    "components/data-table/**",
+    "components/dynamic-form/**",
+    "components/json-editor/**",
+    "components/layout/**",
+    "components/locale-switcher.tsx",
+    "components/roles/**",
+    "components/users/**",
+    "components/connections/connection-list.tsx",
+    "components/auth/logout-button.tsx",
+    "**/*.d.ts",
+    "node_modules/**",
+    "dist/**",
+    ".next/**",
+  ],
+};

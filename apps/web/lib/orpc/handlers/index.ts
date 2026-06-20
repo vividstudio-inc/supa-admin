@@ -1,5 +1,4 @@
 import "server-only";
-import { timingSafeEqual } from "node:crypto";
 import { ORPCError } from "@orpc/server";
 import {
   isSetupComplete,
@@ -20,18 +19,11 @@ import { createTargetAdminClient } from "@supa-admin/supabase-target/admin";
 import { validateTargetUrl } from "@supa-admin/utils";
 import { env } from "@/lib/env";
 import { os, withAdmin } from "../os";
-
-function verifySetupSecret(provided: string): void {
-  const expected = Buffer.from(env.SETUP_SECRET);
-  const actual = Buffer.from(provided);
-  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
-    throw new ORPCError("FORBIDDEN", { message: "Invalid setup secret" });
-  }
-}
+import { verifySetupSecret } from "../verify-setup-secret";
 
 export const setupHandlers = os.setup.router({
   createAdmin: os.setup.createAdmin.handler(async ({ input }) => {
-    verifySetupSecret(input.setupSecret);
+    verifySetupSecret(input.setupSecret, env.SETUP_SECRET);
 
     const service = createMetaServiceClient();
 
