@@ -1,0 +1,111 @@
+{
+  "common": {
+    "appName": "SupaAdmin",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "edit": "編集",
+    "create": "作成",
+    "search": "検索",
+    "loading": "読み込み中...",
+    "confirm": "確認",
+    "back": "戻る",
+    "actions": "操作",
+    "yes": "はい",
+    "no": "いいえ",
+    "success": "成功しました",
+    "error": "エラーが発生しました"
+  },
+  "auth": {
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "email": "メールアドレス",
+    "password": "パスワード",
+    "loginTitle": "SupaAdmin にログイン",
+    "loginDescription": "管理画面にアクセスするにはログインしてください",
+    "invalidCredentials": "メールアドレスまたはパスワードが正しくありません"
+  },
+  "setup": {
+    "title": "初期セットアップ",
+    "description": "最初の管理者アカウントを作成してください",
+    "displayName": "表示名",
+    "setupSecret": "セットアップ秘密値",
+    "createAdmin": "管理者を作成",
+    "complete": "セットアップ完了"
+  },
+  "nav": {
+    "dashboard": "ダッシュボード",
+    "connections": "接続先",
+    "users": "ユーザー",
+    "roles": "ロール",
+    "settings": "設定"
+  },
+  "connections": {
+    "title": "接続先",
+    "add": "接続先を追加",
+    "name": "名前",
+    "url": "Project URL",
+    "anonKey": "Anon Key",
+    "serviceRoleKey": "Service Role Key",
+    "testConnection": "接続テスト",
+    "syncSchema": "スキーマ再読込",
+    "syncRls": "RLS を同期",
+    "deleteConfirm": "この接続先を削除しますか？暗号化されたキーも削除されます。",
+    "schemaSynced": "スキーマを更新しました（{count} テーブル）",
+    "grantHint": "テーブルが見えない場合、接続先 DB で GRANT を確認してください",
+    "lastSynced": "最終同期"
+  },
+  "connect": {
+    "title": "接続先にログイン",
+    "description": "接続先 Supabase のユーザー認証情報を入力してください",
+    "connect": "接続",
+    "connected": "接続済み"
+  },
+  "table": {
+    "noData": "データがありません",
+    "createRow": "行を作成",
+    "editRow": "行を編集",
+    "deleteRow": "行を削除",
+    "deleteConfirm": "この行を物理削除します。よろしいですか？",
+    "sortAsc": "昇順",
+    "sortDesc": "降順",
+    "page": "ページ",
+    "of": "/",
+    "rows": "件"
+  },
+  "users": {
+    "title": "ユーザー管理",
+    "add": "ユーザーを追加",
+    "displayName": "表示名",
+    "role": "ロール",
+    "platformAdmin": "プラットフォーム管理者",
+    "member": "メンバー",
+    "assignRoles": "ロール割当",
+    "provision": "接続先ユーザー作成",
+    "overrides": "個別権限上書き"
+  },
+  "roles": {
+    "title": "ロール管理",
+    "add": "ロールを追加",
+    "name": "ロール名",
+    "description": "説明",
+    "permissions": "権限マトリクス",
+    "canRead": "読取",
+    "canCreate": "作成",
+    "canUpdate": "更新",
+    "canDelete": "削除"
+  },
+  "rls": {
+    "preview": "RLS SQL プレビュー",
+    "apply": "適用",
+    "copySql": "SQL をコピー",
+    "warning": "既存の SupaAdmin ポリシーが上書きされる可能性があります"
+  },
+  "errors": {
+    "permissionDenied": "この操作を行う権限がありません",
+    "rlsViolation": "行レベルセキュリティにより拒否されました",
+    "duplicateKey": "重複するキーが存在します",
+    "unauthorized": "認証が必要です",
+    "forbidden": "アクセスが拒否されました"
+  }
+}

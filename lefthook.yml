@@ -1,0 +1,32 @@
+pre-commit:
+  commands:
+    generate-openapi-spec:
+      glob: "packages/shared/orpc-contract/src/**/*.ts"
+      run: pnpm --filter @supa-admin/orpc-contract generate:openapi && git add packages/shared/orpc-contract/spec.json
+    prevent-migration-commits:
+      glob: "supabase/migrations/**/*"
+      run: |
+        echo ""
+        echo "❌ supabase/migrations/** への手動コミットは禁止です。"
+        echo "   マイグレーション SQL は Drizzle schema から CI が生成します。"
+        echo ""
+        exit 1
+    biome-check:
+      glob: "*.{js,ts,jsx,tsx,json}"
+      run: npx @biomejs/biome check --write --unsafe --no-errors-on-unmatched --files-ignore-unknown=true {staged_files} && git add {staged_files}
+
+commit-msg:
+  commands:
+    conventional-commits:
+      run: |
+        msg=$(head -n1 "{1}")
+        case "$msg" in
+          "Merge "*|"Revert "*|"fixup! "*|"squash! "*) exit 0 ;;
+        esac
+        if echo "$msg" | grep -Eq '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9 ._/-]+\))?!?: .+'; then
+          exit 0
+        fi
+        echo ""
+        echo "❌ コミットメッセージが Conventional Commits 形式ではありません。"
+        echo ""
+        exit 1

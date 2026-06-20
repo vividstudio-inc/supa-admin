@@ -1,0 +1,26 @@
+{
+  "name": "@supa-admin/auth",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    "./client": "./src/meta-client.ts",
+    "./server": "./src/meta-server.ts",
+    "./permissions": "./src/permissions.ts",
+    "./connection-keys": "./src/connection-keys.ts"
+  },
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": {
+    "@supa-admin/crypto": "workspace:*",
+    "@supa-admin/projections": "workspace:*",
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.108.2",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@supa-admin/tsconfig": "workspace:*",
+    "@types/node": "^20",
+    "next": "16.2.9",
+    "typescript": "~5.8.3"
+  }
+}

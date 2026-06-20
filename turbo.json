@@ -1,0 +1,62 @@
+{
+  "$schema": "https://turborepo.org/schema.json",
+  "globalDependencies": ["**/.env"],
+  "globalEnv": [
+    "NEXT_PUBLIC_META_SUPABASE_URL",
+    "NEXT_PUBLIC_META_SUPABASE_ANON_KEY",
+    "META_SUPABASE_SERVICE_ROLE_KEY",
+    "LOCAL_TARGET_SUPABASE_URL",
+    "LOCAL_TARGET_SUPABASE_ANON_KEY",
+    "LOCAL_TARGET_SUPABASE_SERVICE_ROLE_KEY",
+    "ENCRYPTION_KEY",
+    "DATABASE_URL",
+    "TEST_DATABASE_URL",
+    "NEXT_PUBLIC_APP_URL",
+    "NODE_ENV",
+    "PORT",
+    "VERCEL_ENV",
+    "VERCEL_BRANCH_URL",
+    "VERCEL_PROJECT_PRODUCTION_URL",
+    "VERCEL_URL",
+    "SKIP_ENV_VALIDATION"
+  ],
+  "tasks": {
+    "topo": {
+      "dependsOn": ["^topo"]
+    },
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "next-env.d.ts",
+        ".output/**",
+        ".vercel/output/**",
+        "dist/**"
+      ]
+    },
+    "test": {
+      "dependsOn": ["^build"]
+    },
+    "dev": {
+      "persistent": true,
+      "cache": false
+    },
+    "format": {
+      "dependsOn": ["^topo"]
+    },
+    "lint": {
+      "dependsOn": ["^topo"]
+    },
+    "typecheck": {
+      "dependsOn": ["^topo"],
+      "outputs": ["node_modules/.cache/tsbuildinfo.json"]
+    },
+    "clean": {
+      "cache": false
+    },
+    "//#clean": {
+      "cache": false
+    }
+  }
+}

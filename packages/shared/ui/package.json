@@ -1,0 +1,26 @@
+{
+  "name": "@supa-admin/ui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    "./*": "./src/*.tsx",
+    "./utils": "./src/utils.ts"
+  },
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": {
+    "@base-ui/react": "^1.6.0",
+    "@supa-admin/utils": "workspace:*",
+    "class-variance-authority": "^0.7.1",
+    "lucide-react": "^1.21.0",
+    "next-themes": "^0.4.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "sonner": "^2.0.7"
+  },
+  "devDependencies": {
+    "@supa-admin/tsconfig": "workspace:*",
+    "@types/react": "^19",
+    "typescript": "~5.8.3"
+  }
+}

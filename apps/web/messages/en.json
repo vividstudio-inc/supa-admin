@@ -1,0 +1,111 @@
+{
+  "common": {
+    "appName": "SupaAdmin",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "loading": "Loading...",
+    "confirm": "Confirm",
+    "back": "Back",
+    "actions": "Actions",
+    "yes": "Yes",
+    "no": "No",
+    "success": "Success",
+    "error": "An error occurred"
+  },
+  "auth": {
+    "login": "Log in",
+    "logout": "Log out",
+    "email": "Email",
+    "password": "Password",
+    "loginTitle": "Sign in to SupaAdmin",
+    "loginDescription": "Sign in to access the admin panel",
+    "invalidCredentials": "Invalid email or password"
+  },
+  "setup": {
+    "title": "Initial Setup",
+    "description": "Create the first administrator account",
+    "displayName": "Display name",
+    "setupSecret": "Setup secret",
+    "createAdmin": "Create administrator",
+    "complete": "Setup complete"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "connections": "Connections",
+    "users": "Users",
+    "roles": "Roles",
+    "settings": "Settings"
+  },
+  "connections": {
+    "title": "Connections",
+    "add": "Add connection",
+    "name": "Name",
+    "url": "Project URL",
+    "anonKey": "Anon Key",
+    "serviceRoleKey": "Service Role Key",
+    "testConnection": "Test connection",
+    "syncSchema": "Reload schema",
+    "syncRls": "Sync RLS",
+    "deleteConfirm": "Delete this connection? Encrypted keys will also be removed.",
+    "schemaSynced": "Schema updated ({count} tables)",
+    "grantHint": "If tables are missing, check GRANT on the target database",
+    "lastSynced": "Last synced"
+  },
+  "connect": {
+    "title": "Connect to target",
+    "description": "Enter credentials for the target Supabase project",
+    "connect": "Connect",
+    "connected": "Connected"
+  },
+  "table": {
+    "noData": "No data",
+    "createRow": "Create row",
+    "editRow": "Edit row",
+    "deleteRow": "Delete row",
+    "deleteConfirm": "Permanently delete this row?",
+    "sortAsc": "Ascending",
+    "sortDesc": "Descending",
+    "page": "Page",
+    "of": "of",
+    "rows": "rows"
+  },
+  "users": {
+    "title": "User management",
+    "add": "Add user",
+    "displayName": "Display name",
+    "role": "Role",
+    "platformAdmin": "Platform admin",
+    "member": "Member",
+    "assignRoles": "Assign roles",
+    "provision": "Provision target user",
+    "overrides": "Permission overrides"
+  },
+  "roles": {
+    "title": "Role management",
+    "add": "Add role",
+    "name": "Role name",
+    "description": "Description",
+    "permissions": "Permission matrix",
+    "canRead": "Read",
+    "canCreate": "Create",
+    "canUpdate": "Update",
+    "canDelete": "Delete"
+  },
+  "rls": {
+    "preview": "RLS SQL preview",
+    "apply": "Apply",
+    "copySql": "Copy SQL",
+    "warning": "Existing SupaAdmin policies may be overwritten"
+  },
+  "errors": {
+    "permissionDenied": "You do not have permission for this operation",
+    "rlsViolation": "Denied by row-level security",
+    "duplicateKey": "Duplicate key exists",
+    "unauthorized": "Authentication required",
+    "forbidden": "Access denied"
+  }
+}

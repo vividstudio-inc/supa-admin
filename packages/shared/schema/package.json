@@ -1,0 +1,19 @@
+{
+  "name": "@supa-admin/schema",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": {
+    "@supa-admin/auth": "workspace:*",
+    "@supa-admin/crypto": "workspace:*",
+    "@supa-admin/projections": "workspace:*",
+    "@supa-admin/utils": "workspace:*",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@supa-admin/tsconfig": "workspace:*",
+    "typescript": "~5.8.3"
+  }
+}

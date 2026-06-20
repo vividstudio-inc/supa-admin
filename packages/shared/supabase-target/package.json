@@ -1,0 +1,28 @@
+{
+  "name": "@supa-admin/supabase-target",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/client.ts",
+    "./admin": "./src/admin.ts",
+    "./clear-sessions": "./src/clear-sessions.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@supa-admin/crypto": "workspace:*",
+    "@supabase/supabase-js": "^2.108.2",
+    "@supabase/ssr": "^0.12.0",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@supa-admin/tsconfig": "workspace:*",
+    "@supa-admin/vitest-config": "workspace:*",
+    "@types/node": "^20",
+    "typescript": "~5.8.3",
+    "vitest": "^3.2.4"
+  }
+}
