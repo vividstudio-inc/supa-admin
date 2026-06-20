@@ -26,4 +26,4 @@ Security reports should cover SupaAdmin application code in this repository. Iss
 
 ## Supported versions
 
-Security fixes are applied to the latest `main` branch. There are no long-term release branches at this time.
+Security fixes are applied to the latest `main` branch and the latest release tag (e.g. `v0.1.0`). There are no long-term release branches at this time.

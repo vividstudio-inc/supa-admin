@@ -1,6 +1,34 @@
 # SupaAdmin
 
+[![CI](https://github.com/mizukendesu/supa-admin/actions/workflows/ci.yml/badge.svg)](https://github.com/mizukendesu/supa-admin/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/mizukendesu/supa-admin/graph/badge.svg)](https://codecov.io/gh/mizukendesu/supa-admin)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D22.18.0-339933?logo=node.js&logoColor=white)](package.json)
+[![Release](https://img.shields.io/github/v/release/mizukendesu/supa-admin)](https://github.com/mizukendesu/supa-admin/releases)
+
 Self-hosted admin panel for operating multiple Supabase projects from a single UI.
+
+[Quick Start](#quick-start) · [Architecture](#architecture) · [Features](#features) · [Contributing](CONTRIBUTING.md) · [日本語](docs/ja/README.md)
+
+## Table of contents
+
+- [What & Why](#what--why)
+- [Live Demo](#live-demo)
+- [Architecture](#architecture)
+- [Tech stack](#tech-stack)
+- [Quick Start](#quick-start)
+- [Two-stage authentication](#two-stage-authentication)
+- [Monorepo structure](#monorepo-structure)
+- [Scripts](#scripts)
+- [Environment](#environment)
+- [API](#api)
+- [Security](#security)
+- [Deploy](#deploy)
+- [Features](#features)
+- [Out of scope](#out-of-scope)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## What & Why
 
@@ -11,6 +39,47 @@ Compared to the Supabase Dashboard:
 - **Multi-connection** — register and switch between Target projects
 - **Team RBAC** — per-connection, per-table permissions for members
 - **Encrypted credentials** — Target `service_role` keys stored encrypted in Meta (you manage the keys)
+
+## Live Demo
+
+> **Demo URL:** TBD — self-hosted only for now. See [Quick Start](#quick-start) to run locally.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph meta [Meta Supabase]
+    Auth[Supabase Auth]
+    Registry[Connections + RBAC]
+    EncKeys[Encrypted service_role keys]
+  end
+  subgraph app [SupaAdmin Web]
+    UI[Next.js UI]
+    ORPC[oRPC /api/rpc]
+  end
+  subgraph targets [Target Supabase Projects]
+    T1[Project A]
+    T2[Project B]
+  end
+  User -->|1 Meta login| Auth
+  UI --> ORPC --> Registry
+  User -->|2 Target session| UI
+  UI -->|browser client CRUD| T1
+  UI -->|browser client CRUD| T2
+  Registry --> EncKeys
+```
+
+See [docs/architecture.md](docs/architecture.md) for layering, dependencies, and the dual-Supabase model.
+
+## Tech stack
+
+![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20Auth-3FCF8E?logo=supabase&logoColor=white)
+![Drizzle](https://img.shields.io/badge/Drizzle-ORM-C5F74F?logo=drizzle&logoColor=black)
+![oRPC](https://img.shields.io/badge/oRPC-type--safe%20API-6366F1)
+![Turborepo](https://img.shields.io/badge/Turborepo-monorepo-EF4444?logo=turborepo&logoColor=white)
+![Biome](https://img.shields.io/badge/Biome-lint%20%2F%20format-60A5FA)
+![Vitest](https://img.shields.io/badge/Vitest-test-6E9F18?logo=vitest&logoColor=white)
 
 ## Quick Start
 
@@ -52,6 +121,7 @@ scripts/               db:start, setup:local (cross-platform tsx)
 | `pnpm dev` | Start Next.js dev server |
 | `pnpm build` | Production build |
 | `pnpm test` | Vitest (Meta Supabase required) |
+| `pnpm test:coverage` | Vitest with coverage report |
 | `pnpm lint` | Biome check |
 | `pnpm typecheck` | Turbo typecheck |
 | `pnpm db:start` | Start Meta + Target Supabase |
@@ -76,15 +146,19 @@ All meta DB operations use **oRPC** at `/api/rpc`. Target CRUD uses the browser 
 
 ## Security
 
-Target `service_role` keys are encrypted at rest in Meta using `ENCRYPTION_KEY`. You are responsible for key rotation and secure storage. See [SECURITY.md](SECURITY.md).
+Target `service_role` keys are encrypted at rest in Meta using `ENCRYPTION_KEY`. You are responsible for key rotation and secure storage.
 
-## Docker
+See [SECURITY.md](SECURITY.md) for the vulnerability reporting policy and operational guidance.
+
+## Deploy
+
+### Docker
 
 ```bash
 docker compose up --build
 ```
 
-## Vercel deploy
+### Vercel
 
 - Root Directory: `apps/web`
 - Build Command: `cd ../.. && pnpm install && pnpm turbo build --filter=@supa-admin/web`
@@ -109,6 +183,8 @@ docker compose up --build
 - [Architecture](docs/architecture.md)
 - [Coding standards](docs/coding-standards.md)
 - [Testing](docs/testing.md)
+- [Changelog](CHANGELOG.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
 - [日本語概要](docs/ja/README.md)
 
 ## Contributing

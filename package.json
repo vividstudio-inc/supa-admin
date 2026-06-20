@@ -11,6 +11,7 @@
     "clean:workspaces": "turbo clean",
     "test": "tsx scripts/test-with-supabase.ts",
     "test:turbo": "turbo test",
+    "test:coverage": "turbo test -- --coverage",
     "dev": "turbo dev --parallel",
     "format": "biome check --write --unsafe",
     "lint": "biome check",

@@ -2,6 +2,8 @@
 
 Thank you for your interest in contributing!
 
+This project follows the [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you agree to uphold it.
+
 ## Getting started
 
 1. Fork the repository and clone your fork.
@@ -47,7 +49,7 @@ Lefthook enforces this format on commit.
 
 - Keep PRs focused — one logical change per PR when possible.
 - Fill out the PR template checklist.
-- Ensure CI passes (lint, typecheck, build, test).
+- Ensure CI passes (lint, typecheck, build, test with coverage).
 
 ## Database migrations
 
