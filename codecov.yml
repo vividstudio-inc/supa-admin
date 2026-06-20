@@ -10,3 +10,21 @@ coverage:
         threshold: 0%
 comment:
   layout: "reach,diff,flags,files"
+
+# Mirror Vitest excludes — barrels, env bootstrap, framework glue.
+# Keeps the badge aligned with in-scope business logic, not re-exports.
+ignore:
+  - "apps/web/lib/crypto/**"
+  - "apps/web/lib/schema/introspect.ts"
+  - "apps/web/lib/types/**"
+  - "apps/web/lib/permissions/**"
+  - "apps/web/lib/rls/sync.ts"
+  - "apps/web/lib/supabase/**"
+  - "apps/web/lib/utils.ts"
+  - "apps/web/lib/env.ts"
+  - "apps/web/lib/orpc/router.ts"
+  - "apps/web/lib/orpc/client.browser.ts"
+  - "apps/web/lib/orpc/__tests__/**"
+  - "packages/shared/auth/src/meta-client.ts"
+  - "packages/shared/auth/src/meta-server.ts"
+  - "packages/shared/auth/src/server.ts"
