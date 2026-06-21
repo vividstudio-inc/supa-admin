@@ -25,6 +25,8 @@ Pure functions (crypto, `generateRlsSql`, permission merge, URL validation) are 
 - CI uploads reports to [Codecov](https://codecov.io/gh/vividstudio-inc/supa-admin)
 - **Project target:** 80% (see `codecov.yml`). Patch coverage on changed lines: 80%.
 
+Coverage excludes thin barrels (`index.ts` re-exports), Drizzle DDL (`packages/shared/db/src/schema/**`), framework glue (Supabase/Next client factories), shadcn `components/ui/**`, and presentation-only apps/web surfaces (`components/patterns/**`, connection table/list wrappers). Vitest `tooling/vitest/coverage.js` is SSOT; `codecov.yml` mirrors the same paths.
+
 ### Test file layout
 
 | Area | Location |
