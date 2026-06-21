@@ -1,10 +1,10 @@
 # SupaAdmin
 
-[![CI](https://github.com/mizukendesu/supa-admin/actions/workflows/ci.yml/badge.svg)](https://github.com/mizukendesu/supa-admin/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/mizukendesu/supa-admin/graph/badge.svg)](https://codecov.io/gh/mizukendesu/supa-admin)
+[![CI](https://github.com/vividstudio-inc/supa-admin/actions/workflows/ci.yml/badge.svg)](https://github.com/vividstudio-inc/supa-admin/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/vividstudio-inc/supa-admin/graph/badge.svg)](https://codecov.io/gh/vividstudio-inc/supa-admin)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22.18.0-339933?logo=node.js&logoColor=white)](package.json)
-[![Release](https://img.shields.io/github/v/release/mizukendesu/supa-admin)](https://github.com/mizukendesu/supa-admin/releases)
+[![Release](https://img.shields.io/github/v/release/vividstudio-inc/supa-admin)](https://github.com/vividstudio-inc/supa-admin/releases)
 
 Self-hosted admin panel for operating multiple Supabase projects from a single UI.
 

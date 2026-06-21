@@ -22,7 +22,7 @@ Pure functions (crypto, `generateRlsSql`, permission merge, URL validation) are 
 
 - Local: `pnpm test:coverage` (requires Meta Supabase on port **54322**)
 - Generates `lcov.info` under `packages/**/coverage/` and `apps/web/coverage/`
-- CI uploads reports to [Codecov](https://codecov.io/gh/mizukendesu/supa-admin)
+- CI uploads reports to [Codecov](https://codecov.io/gh/vividstudio-inc/supa-admin)
 - **Project target:** 80% (see `codecov.yml`). Patch coverage on changed lines: 80%.
 
 ### Test file layout

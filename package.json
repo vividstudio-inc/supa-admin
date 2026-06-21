@@ -12,6 +12,8 @@
     "test": "tsx scripts/test-with-supabase.ts",
     "test:turbo": "turbo test",
     "test:coverage": "turbo test -- --coverage",
+    "test:unit": "turbo test --filter=!@supa-admin/auth --filter=!@supa-admin/repository-kit -- --coverage",
+    "test:integration": "turbo test --filter=@supa-admin/auth --filter=@supa-admin/repository-kit -- --coverage",
     "dev": "turbo dev --parallel",
     "format": "biome check --write --unsafe",
     "lint": "biome check",

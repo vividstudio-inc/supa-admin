@@ -88,4 +88,4 @@ Commit both the SSOT changes and regenerated outputs. See [docs/ai-agents.md](do
 
 ## Questions
 
-Open a [GitHub Issue](https://github.com/mizukendesu/supa-admin/issues) for bugs or feature requests.
+Open a [GitHub Issue](https://github.com/vividstudio-inc/supa-admin/issues) for bugs or feature requests.

@@ -5,7 +5,7 @@
 If you discover a security vulnerability, please report it responsibly:
 
 1. **Do not** open a public GitHub issue for security-sensitive findings.
-2. Email or open a private security advisory via GitHub Security Advisories on [mizukendesu/supa-admin](https://github.com/mizukendesu/supa-admin/security/advisories).
+2. Email or open a private security advisory via GitHub Security Advisories on [vividstudio-inc/supa-admin](https://github.com/vividstudio-inc/supa-admin/security/advisories).
 
 We will acknowledge receipt and work on a fix. Please allow reasonable time before public disclosure.
 

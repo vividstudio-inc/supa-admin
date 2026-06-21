@@ -60,9 +60,9 @@ representative at an online or offline event.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the community leaders responsible for enforcement at
-[GitHub Issues](https://github.com/mizukendesu/supa-admin/issues) for general
+[GitHub Issues](https://github.com/vividstudio-inc/supa-admin/issues) for general
 conduct concerns, or via
-[GitHub Security Advisories](https://github.com/mizukendesu/supa-admin/security/advisories)
+[GitHub Security Advisories](https://github.com/vividstudio-inc/supa-admin/security/advisories)
 for sensitive reports.
 
 All complaints will be reviewed and investigated promptly and fairly.
