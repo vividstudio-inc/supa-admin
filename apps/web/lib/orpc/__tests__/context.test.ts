@@ -21,7 +21,7 @@ describe("createOrpcContextFromRequest", () => {
     const context = await createOrpcContextFromRequest(
       new Request("http://localhost"),
     );
-    expect(context).toEqual({ actorId: "user-123" });
+    expect(context).toEqual({ actorId: "user-123", clientIp: "unknown" });
   });
 
   it("when user missing, then returns null actorId", async () => {
@@ -36,6 +36,6 @@ describe("createOrpcContextFromRequest", () => {
     const context = await createOrpcContextFromRequest(
       new Request("http://localhost"),
     );
-    expect(context).toEqual({ actorId: null });
+    expect(context).toEqual({ actorId: null, clientIp: "unknown" });
   });
 });

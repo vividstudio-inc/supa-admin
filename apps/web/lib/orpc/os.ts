@@ -3,6 +3,7 @@ import { contract } from "@supa-admin/orpc-contract";
 
 export type OrpcContext = {
   actorId: string | null;
+  clientIp: string;
 };
 
 export type AuthenticatedContext = OrpcContext & {

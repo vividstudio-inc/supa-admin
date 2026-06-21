@@ -7,4 +7,5 @@ function run(cmd: string) {
 
 run(supabaseCmd("start"));
 run(supabaseCmd("start --workdir supabase-target"));
-console.log("Meta + Target Supabase started");
+run("docker compose up -d redis");
+console.log("Meta + Target Supabase + Redis started");

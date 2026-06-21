@@ -5,8 +5,9 @@ import { EmptyState } from "@/components/patterns/empty-state";
 import { MetricCard } from "@/components/patterns/metric-card";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/routing";
+import { router } from "@/lib/orpc/router";
+import { getServerCaller } from "@/lib/orpc/server-caller";
 import { getShellConnections, getShellProfile } from "@/lib/shell-data";
-import { createMetaServerClient } from "@/lib/supabase/meta/server";
 
 export default async function DashboardPage({
   params,
@@ -41,12 +42,12 @@ export default async function DashboardPage({
           <>
             <MetricCard
               label={t("users.title")}
-              value={<AdminUserCount />}
+              value={<AdminStats />}
               hint={t("dashboard.usersHint")}
             />
             <MetricCard
               label={t("roles.title")}
-              value={<RoleCount />}
+              value={<AdminStats field="roleCount" />}
               hint={t("dashboard.rolesHint")}
             />
           </>
@@ -71,18 +72,14 @@ export default async function DashboardPage({
   );
 }
 
-async function AdminUserCount() {
-  const supabase = await createMetaServerClient();
-  const { count } = await supabase
-    .from("profiles")
-    .select("*", { count: "exact", head: true });
-  return <span>{count ?? 0}</span>;
-}
-
-async function RoleCount() {
-  const supabase = await createMetaServerClient();
-  const { count } = await supabase
-    .from("roles")
-    .select("*", { count: "exact", head: true });
-  return <span>{count ?? 0}</span>;
+async function AdminStats({
+  field = "userCount",
+}: {
+  field?: "userCount" | "roleCount";
+}) {
+  const { callWithoutInput } = await getServerCaller();
+  const stats = await callWithoutInput(router.dashboard.stats);
+  return (
+    <span>{field === "userCount" ? stats.userCount : stats.roleCount}</span>
+  );
 }

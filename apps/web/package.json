@@ -20,6 +20,7 @@
     "@supa-admin/crypto": "workspace:*",
     "@supa-admin/orpc-contract": "workspace:*",
     "@supa-admin/projections": "workspace:*",
+    "@supa-admin/rate-limit": "workspace:*",
     "@supa-admin/rls": "workspace:*",
     "@supa-admin/schema": "workspace:*",
     "@supa-admin/supabase-target": "workspace:*",

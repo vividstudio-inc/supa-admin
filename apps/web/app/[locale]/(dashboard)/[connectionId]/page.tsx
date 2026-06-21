@@ -5,10 +5,14 @@ import { ConnectionTableList } from "@/components/connections/connection-table-l
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Link, redirect } from "@/i18n/routing";
-import { getConnectionBootstrapStatus } from "@/lib/connection-bootstrap";
+import { router } from "@/lib/orpc/router";
+import { getServerCaller } from "@/lib/orpc/server-caller";
 import { requirePlatformAdmin } from "@/lib/permissions";
-import { getShellProfile, getShellTablePermissions } from "@/lib/shell-data";
-import { createMetaServerClient } from "@/lib/supabase/meta/server";
+import {
+  getConnectionBootstrapStatus,
+  getShellProfile,
+  getShellTablePermissions,
+} from "@/lib/shell-data";
 
 export default async function ConnectionTablesPage({
   params,
@@ -34,14 +38,10 @@ export default async function ConnectionTablesPage({
     }
   }
 
-  const supabase = await createMetaServerClient();
-  const connectionSource =
-    profile.role === "platform_admin" ? "connections" : "connections_member";
-  const { data: connection } = await supabase
-    .from(connectionSource)
-    .select("id, name")
-    .eq("id", connectionId)
-    .single();
+  const { call } = await getServerCaller();
+  const { connection } = await call(router.connections.getAccessible, {
+    id: connectionId,
+  });
 
   if (!connection) notFound();
 

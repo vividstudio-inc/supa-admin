@@ -110,6 +110,34 @@ export const connectionsContract = oc.router({
     .route({ method: "DELETE", path: "/connections/{id}" })
     .input(z.object({ id: z.string().uuid() }))
     .output(z.object({ success: z.literal(true) })),
+  listAccessible: oc
+    .route({ method: "GET", path: "/connections/accessible" })
+    .output(z.object({ connections: z.array(connectionSummary) })),
+  getAccessible: oc
+    .route({ method: "GET", path: "/connections/{id}/accessible" })
+    .input(z.object({ id: z.string().uuid() }))
+    .output(
+      z.object({
+        connection: z.object({
+          id: z.string().uuid(),
+          name: z.string(),
+          url: z.string(),
+          bootstrap_status: bootstrapStatus,
+        }),
+        tables: z.array(
+          z.object({
+            id: z.string().uuid(),
+            connection_id: z.string().uuid(),
+            table_name: z.string(),
+            columns: z.array(columnMeta),
+          }),
+        ),
+      }),
+    ),
+  getAnonKey: oc
+    .route({ method: "GET", path: "/connections/{id}/anon-key" })
+    .input(z.object({ id: z.string().uuid() }))
+    .output(z.object({ anonKey: z.string() })),
   schemaSync: oc
     .route({ method: "POST", path: "/connections/{id}/schema-sync" })
     .input(z.object({ id: z.string().uuid() }))
@@ -298,6 +326,32 @@ export const provisionContract = oc.router({
     ),
 });
 
+export const appContract = oc.router({
+  shell: oc.route({ method: "GET", path: "/app/shell" }).output(
+    z.object({
+      profile,
+      connections: z.array(
+        z.object({ id: z.string().uuid(), name: z.string() }),
+      ),
+    }),
+  ),
+});
+
+export const dashboardContract = oc.router({
+  stats: oc.route({ method: "GET", path: "/dashboard/stats" }).output(
+    z.object({
+      userCount: z.number(),
+      roleCount: z.number(),
+    }),
+  ),
+});
+
+export const healthContract = oc.router({
+  ping: oc
+    .route({ method: "GET", path: "/health/ping" })
+    .output(z.object({ ok: z.literal(true) })),
+});
+
 export const contract = oc.router({
   setup: setupContract,
   connections: connectionsContract,
@@ -305,6 +359,9 @@ export const contract = oc.router({
   roles: rolesContract,
   users: usersContract,
   provision: provisionContract,
+  app: appContract,
+  dashboard: dashboardContract,
+  health: healthContract,
 });
 
 export type Contract = typeof contract;

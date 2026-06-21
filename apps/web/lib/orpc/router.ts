@@ -1,6 +1,9 @@
 import {
+  appHandlers,
   connectionsHandlers,
   connectionsRlsHandlers,
+  dashboardHandlers,
+  healthHandlers,
   provisionHandlers,
   rolesHandlers,
   setupHandlers,
@@ -14,4 +17,7 @@ export const router = {
   roles: rolesHandlers,
   users: usersHandlers,
   provision: provisionHandlers,
+  app: appHandlers,
+  dashboard: dashboardHandlers,
+  health: healthHandlers,
 };

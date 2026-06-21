@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import { setRequestLocale } from "next-intl/server";
 import { ShellExtrasRegistrar } from "@/components/layout/shell-context";
+import { router } from "@/lib/orpc/router";
+import { getServerCaller } from "@/lib/orpc/server-caller";
 import { getUserConnectionIds } from "@/lib/permissions";
 import { getShellProfile, getShellTablePermissions } from "@/lib/shell-data";
-import { createMetaServerClient } from "@/lib/supabase/meta/server";
 
 export default async function ConnectionLayout({
   children,
@@ -21,14 +22,10 @@ export default async function ConnectionLayout({
   const allowedIds = await getUserConnectionIds(profile.id, profile.role);
   if (!allowedIds.includes(connectionId)) notFound();
 
-  const supabase = await createMetaServerClient();
-  const connectionSource =
-    profile.role === "platform_admin" ? "connections" : "connections_member";
-  const { data: connection } = await supabase
-    .from(connectionSource)
-    .select("id, name")
-    .eq("id", connectionId)
-    .single();
+  const { call } = await getServerCaller();
+  const { connection } = await call(router.connections.getAccessible, {
+    id: connectionId,
+  });
 
   if (!connection) notFound();
 

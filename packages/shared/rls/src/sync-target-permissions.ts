@@ -1,5 +1,8 @@
 import "server-only";
-import { createMetaServerClient } from "@supa-admin/auth/server";
+import {
+  createMetaServerClient,
+  createMetaServiceClient,
+} from "@supa-admin/auth/server";
 import type { PlatformRole } from "@supa-admin/projections";
 import { createTargetAdminClient } from "@supa-admin/supabase-target/admin";
 import { buildTargetJwtPermissions } from "./jwt-permissions";
@@ -108,7 +111,8 @@ export async function syncTargetUserPermissions(
     throw new Error(updateError.message);
   }
 
-  await supabase.from("target_user_mappings").upsert(
+  const service = createMetaServiceClient();
+  await service.from("target_user_mappings").upsert(
     {
       user_id: input.metaUserId,
       connection_id: input.connectionId,

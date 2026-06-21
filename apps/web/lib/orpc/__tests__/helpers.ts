@@ -22,6 +22,7 @@ export function adminCallContext(
 ): AdminCallContext {
   return {
     actorId: userId,
+    clientIp: "127.0.0.1",
     profile: { id: userId, role: "platform_admin" },
   };
 }

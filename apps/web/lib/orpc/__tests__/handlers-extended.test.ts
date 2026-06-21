@@ -28,7 +28,9 @@ vi.mock("@supa-admin/rls", () => ({
   previewRlsSync: vi.fn(),
   executeRlsSync: vi.fn().mockResolvedValue({ success: true, sql: "-- sql" }),
   buildAppMetadataPermissions: vi.fn().mockResolvedValue({ permissions: {} }),
-  probeConnectionBootstrap: vi.fn().mockResolvedValue({ ready: true }),
+  probeConnectionBootstrap: vi
+    .fn()
+    .mockResolvedValue({ ready: true, mode: "supaadmin" }),
   executeTargetBootstrap: vi.fn().mockResolvedValue({ success: true }),
   verifyConnectionBootstrap: vi
     .fn()
@@ -147,7 +149,7 @@ describe("setupHandlers.createAdmin", () => {
         displayName: "Admin",
         setupSecret: SETUP_SECRET,
       },
-      { context: { actorId: null } },
+      { context: { actorId: null, clientIp: "127.0.0.1" } },
     );
     expect(result).toEqual({ success: true });
   });
@@ -512,7 +514,10 @@ describe("connectionsHandlers.bootstrap", () => {
 
   it("when probe ready, then returns ready status", async () => {
     const { probeConnectionBootstrap } = await import("@supa-admin/rls");
-    vi.mocked(probeConnectionBootstrap).mockResolvedValueOnce({ ready: true });
+    vi.mocked(probeConnectionBootstrap).mockResolvedValueOnce({
+      ready: true,
+      mode: "supaadmin",
+    });
 
     mockServerFrom.mockReturnValue(
       mockSupabaseQuery({
@@ -621,10 +626,9 @@ describe("connectionsHandlers.target.syncPermissions", () => {
   });
 
   it("when bootstrap ready, then syncs permissions", async () => {
-    mockServerFrom.mockReturnValue(
+    mockServiceFrom.mockReturnValue(
       mockSupabaseQuery({
         data: {
-          id: TEST_IDS.connection,
           url: "https://example.supabase.co",
           service_role_enc: "enc",
           bootstrap_status: "ready",
@@ -649,10 +653,9 @@ describe("connectionsHandlers.target.syncPermissions", () => {
   });
 
   it("when bootstrap pending, then throws PRECONDITION_FAILED", async () => {
-    mockServerFrom.mockReturnValue(
+    mockServiceFrom.mockReturnValue(
       mockSupabaseQuery({
         data: {
-          id: TEST_IDS.connection,
           url: "https://example.supabase.co",
           service_role_enc: "enc",
           bootstrap_status: "pending",

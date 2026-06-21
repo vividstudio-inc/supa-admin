@@ -6,9 +6,14 @@ import {
 } from "../src/bootstrap-sql.js";
 
 describe("buildManualSetupSql", () => {
-  it("when tables provided, then includes exec_sql, helper, and GRANT", () => {
+  it("when tables provided, then includes bootstrap RPCs, helper, and GRANT", () => {
     const sql = buildManualSetupSql(["posts", "comments"]);
-    expect(sql).toContain("CREATE OR REPLACE FUNCTION public.exec_sql");
+    expect(sql).toContain(
+      "CREATE OR REPLACE FUNCTION public.supaadmin_bootstrap",
+    );
+    expect(sql).toContain(
+      "CREATE OR REPLACE FUNCTION public.supaadmin_apply_rls_sql",
+    );
     expect(sql).toContain("supaadmin_has_permission");
     expect(sql).toContain(
       'GRANT SELECT, INSERT, UPDATE, DELETE ON "posts", "comments"',
@@ -18,7 +23,7 @@ describe("buildManualSetupSql", () => {
 
   it("when no tables, then includes commented GRANT fallback", () => {
     const sql = buildManualSetupSql([]);
-    expect(sql).toContain("exec_sql");
+    expect(sql).toContain("supaadmin_bootstrap");
     expect(sql).toContain("No synced tables yet");
   });
 

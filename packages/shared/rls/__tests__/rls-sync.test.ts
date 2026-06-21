@@ -4,6 +4,12 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 const mockFrom = vi.fn();
+const mockResolveUserPermissions = vi.fn();
+
+vi.mock("@supa-admin/auth/permissions", () => ({
+  resolveUserPermissions: (...args: unknown[]) =>
+    mockResolveUserPermissions(...args),
+}));
 
 vi.mock("@supa-admin/auth/server", () => ({
   createMetaServerClient: vi.fn(async () => ({
@@ -102,46 +108,16 @@ describe("executeRlsSync", () => {
 
 describe("buildAppMetadataPermissions", () => {
   it("when roles and overrides present, then matches resolvePermissionsRecord", async () => {
-    mockFrom.mockImplementation((table: string) => {
-      if (table === "user_roles") {
-        return chainMock({ data: [{ role_id: "r1" }], error: null });
-      }
-      if (table === "role_permissions") {
-        return chainMock({
-          data: [
-            {
-              id: "1",
-              role_id: "r1",
-              connection_id: "c1",
-              table_name: "posts",
-              can_read: true,
-              can_create: false,
-              can_update: false,
-              can_delete: false,
-            },
-          ],
-          error: null,
-        });
-      }
-      if (table === "user_permission_overrides") {
-        return chainMock({
-          data: [
-            {
-              id: "1",
-              user_id: "u1",
-              connection_id: "c1",
-              table_name: "posts",
-              can_read: false,
-              can_create: null,
-              can_update: null,
-              can_delete: null,
-            },
-          ],
-          error: null,
-        });
-      }
-      return chainMock({ data: null, error: null });
-    });
+    mockResolveUserPermissions.mockResolvedValue([
+      {
+        connection_id: "c1",
+        table_name: "posts",
+        can_read: false,
+        can_create: false,
+        can_update: false,
+        can_delete: false,
+      },
+    ]);
 
     const { buildAppMetadataPermissions } = await import("../src/index.js");
     const result = await buildAppMetadataPermissions("u1", "c1");

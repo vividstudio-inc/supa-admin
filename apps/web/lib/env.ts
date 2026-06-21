@@ -6,6 +6,9 @@ const WEAK_ENCRYPTION_KEYS = new Set([
   "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
 ]);
 
+const isProduction = process.env.NODE_ENV === "production";
+const skipValidation = process.env.SKIP_ENV_VALIDATION === "true";
+
 export const env = createEnv({
   server: {
     META_SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
@@ -18,6 +21,21 @@ export const env = createEnv({
     SETUP_SECRET: z.string().min(32),
     DATABASE_URL: z.string().url().optional(),
     CSP_EXTRA_CONNECT_SRC: z.string().optional(),
+    REDIS_URL: skipValidation
+      ? z.string().url().optional()
+      : isProduction
+        ? z.string().url().optional()
+        : z.string().url(),
+    UPSTASH_REDIS_REST_URL: skipValidation
+      ? z.string().url().optional()
+      : isProduction
+        ? z.string().url()
+        : z.string().url().optional(),
+    UPSTASH_REDIS_REST_TOKEN: skipValidation
+      ? z.string().min(1).optional()
+      : isProduction
+        ? z.string().min(1)
+        : z.string().min(1).optional(),
   },
   client: {
     NEXT_PUBLIC_META_SUPABASE_URL: z.string().url(),
@@ -30,10 +48,13 @@ export const env = createEnv({
     SETUP_SECRET: process.env.SETUP_SECRET,
     DATABASE_URL: process.env.DATABASE_URL,
     CSP_EXTRA_CONNECT_SRC: process.env.CSP_EXTRA_CONNECT_SRC,
+    REDIS_URL: process.env.REDIS_URL,
+    UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
+    UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
     NEXT_PUBLIC_META_SUPABASE_URL: process.env.NEXT_PUBLIC_META_SUPABASE_URL,
     NEXT_PUBLIC_META_SUPABASE_ANON_KEY:
       process.env.NEXT_PUBLIC_META_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   },
-  skipValidation: process.env.SKIP_ENV_VALIDATION === "true",
+  skipValidation,
 });

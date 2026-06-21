@@ -3,8 +3,9 @@ import { ConnectionList } from "@/components/connections/connection-list";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Link, redirect } from "@/i18n/routing";
+import { router } from "@/lib/orpc/router";
+import { getServerCaller } from "@/lib/orpc/server-caller";
 import { requirePlatformAdmin } from "@/lib/permissions";
-import { createMetaServerClient } from "@/lib/supabase/meta/server";
 
 export default async function ConnectionsPage({
   params,
@@ -21,11 +22,8 @@ export default async function ConnectionsPage({
   }
 
   const t = await getTranslations();
-  const supabase = await createMetaServerClient();
-  const { data: connections } = await supabase
-    .from("connections")
-    .select("id, name, url, schema_cached_at, bootstrap_status")
-    .order("created_at", { ascending: false });
+  const { callWithoutInput } = await getServerCaller();
+  const { connections } = await callWithoutInput(router.connections.list);
 
   return (
     <div className="space-y-6">

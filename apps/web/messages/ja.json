@@ -93,14 +93,14 @@
       "verified": "セットアップを確認しました",
       "alreadyReady": "すでにセットアップ済みです",
       "reloadSql": "SQL を再読込",
-      "securityNote": "exec_sql は SECURITY DEFINER で任意 SQL を実行します。service_role のみが EXECUTE できます。Service Role Key をクライアントやログに露出しないでください。"
+      "securityNote": "supaadmin_bootstrap / supaadmin_apply_rls_sql は allowlist 付き SECURITY DEFINER RPC です。service_role のみが EXECUTE できます。Service Role Key をクライアントやログに露出しないでください。"
     },
     "onboarding": {
       "title": "接続オンボーディング",
       "description": "「{name}」で CRUD を使う前に、以下のステップを完了してください。",
       "checklist": "セットアップチェックリスト",
       "checklistHint": "Dashboard を使わずに Target ログインと権限を動かすには、すべてのステップが必要です。",
-      "stepBootstrap": "Target bootstrap をインストール（exec_sql・permissions helper・GRANT）",
+      "stepBootstrap": "Target bootstrap をインストール（supaadmin_bootstrap・permissions helper・GRANT）",
       "stepSchema": "Target からスキーマを同期",
       "stepRoles": "ロール権限を設定し RLS を同期",
       "stepProvision": "ユーザーを招待し Target アカウントを provision",

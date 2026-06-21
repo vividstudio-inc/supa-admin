@@ -1,35 +1,33 @@
+import "server-only";
 import { cache } from "react";
-import {
-  getCurrentProfile,
-  getUserConnectionIds,
-  resolveUserPermissions,
-} from "@/lib/permissions";
-import { createMetaServerClient } from "@/lib/supabase/meta/server";
-import type { Profile, ResolvedPermission } from "@/lib/types/database";
+import { router } from "@/lib/orpc/router";
+import { getServerCaller } from "@/lib/orpc/server-caller";
+import { resolveUserPermissions } from "@/lib/permissions";
+import type {
+  BootstrapStatus,
+  Profile,
+  ResolvedPermission,
+} from "@/lib/types/database";
 
 export const getShellProfile = cache(async (): Promise<Profile | null> => {
-  return getCurrentProfile();
+  try {
+    const { callWithoutInput } = await getServerCaller();
+    const { profile } = await callWithoutInput(router.app.shell);
+    return profile as Profile;
+  } catch {
+    return null;
+  }
 });
 
 export const getShellConnections = cache(
   async (): Promise<Array<{ id: string; name: string }>> => {
-    const profile = await getShellProfile();
-    if (!profile) return [];
-
-    const connectionIds = await getUserConnectionIds(profile.id, profile.role);
-    if (connectionIds.length === 0) return [];
-
-    const supabase = await createMetaServerClient();
-    const connectionSource =
-      profile.role === "platform_admin" ? "connections" : "connections_member";
-
-    const { data: connections } = await supabase
-      .from(connectionSource)
-      .select("id, name")
-      .in("id", connectionIds)
-      .order("name");
-
-    return connections ?? [];
+    try {
+      const { callWithoutInput } = await getServerCaller();
+      const { connections } = await callWithoutInput(router.app.shell);
+      return connections;
+    } catch {
+      return [];
+    }
   },
 );
 
@@ -39,4 +37,18 @@ export async function getShellTablePermissions(
   const profile = await getShellProfile();
   if (!profile) return [];
   return resolveUserPermissions(profile.id, connectionId, profile.role);
+}
+
+export async function getConnectionBootstrapStatus(
+  connectionId: string,
+): Promise<BootstrapStatus | null> {
+  try {
+    const { call } = await getServerCaller();
+    const { connection } = await call(router.connections.getAccessible, {
+      id: connectionId,
+    });
+    return connection.bootstrap_status;
+  } catch {
+    return null;
+  }
 }

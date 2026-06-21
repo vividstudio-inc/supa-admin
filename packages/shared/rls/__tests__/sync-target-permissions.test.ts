@@ -11,6 +11,9 @@ vi.mock("@supa-admin/auth/server", () => ({
   createMetaServerClient: vi.fn(async () => ({
     from: mockFrom,
   })),
+  createMetaServiceClient: vi.fn(() => ({
+    from: mockFrom,
+  })),
 }));
 
 vi.mock("@supa-admin/supabase-target/admin", () => ({

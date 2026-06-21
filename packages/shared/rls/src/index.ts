@@ -6,14 +6,19 @@ import {
   buildBootstrapApplySql,
   buildManualSetupSql,
   isExecSqlMissingError,
+  isSupaadminApplyRlsMissingError,
+  isSupaadminBootstrapMissingError,
 } from "./bootstrap-sql";
 import { generateRlsSql } from "./generate-sql";
 import { buildTargetJwtPermissions } from "./jwt-permissions";
 
 export {
   buildBootstrapApplySql,
+  buildExecSqlMigrationSql,
   buildManualSetupSql,
   isExecSqlMissingError,
+  isSupaadminApplyRlsMissingError,
+  isSupaadminBootstrapMissingError,
 } from "./bootstrap-sql";
 export { generateRlsSql } from "./generate-sql";
 export { buildTargetJwtPermissions } from "./jwt-permissions";
@@ -28,21 +33,33 @@ export {
 } from "./sync-target-permissions";
 
 export type BootstrapProbeResult =
-  | { ready: true }
+  | { ready: true; mode: "supaadmin" | "legacy" }
   | { ready: false; setupSql: string };
+
+export type TargetRpcMode = "supaadmin" | "legacy" | "none";
 
 export async function probeTargetBootstrap(
   admin: Pick<ReturnType<typeof createTargetAdminClient>, "rpc">,
-): Promise<{ execSqlAvailable: boolean; error?: string }> {
-  const { error } = await admin.rpc(
+): Promise<{ mode: TargetRpcMode; error?: string }> {
+  const { error: bootstrapError } = await admin.rpc(
+    "supaadmin_bootstrap" as never,
+    { tables: [] } as never,
+  );
+  if (!bootstrapError) return { mode: "supaadmin" };
+
+  if (!isSupaadminBootstrapMissingError(bootstrapError.message)) {
+    return { mode: "none", error: bootstrapError.message };
+  }
+
+  const { error: legacyError } = await admin.rpc(
     "exec_sql" as never,
     { query: "SELECT 1" } as never,
   );
-  if (!error) return { execSqlAvailable: true };
-  if (isExecSqlMissingError(error.message)) {
-    return { execSqlAvailable: false };
+  if (!legacyError) return { mode: "legacy" };
+  if (isExecSqlMissingError(legacyError.message)) {
+    return { mode: "none" };
   }
-  return { execSqlAvailable: false, error: error.message };
+  return { mode: "none", error: legacyError.message };
 }
 
 export async function getConnectionTableNames(
@@ -66,8 +83,8 @@ export async function probeConnectionBootstrap(
   const admin = createTargetAdminClient(url, serviceRoleEnc);
   const probe = await probeTargetBootstrap(admin);
 
-  if (probe.execSqlAvailable) {
-    return { ready: true };
+  if (probe.mode === "supaadmin" || probe.mode === "legacy") {
+    return { ready: true, mode: probe.mode };
   }
 
   return {
@@ -96,24 +113,33 @@ export async function executeTargetBootstrap(
   const admin = createTargetAdminClient(url, serviceRoleEnc);
   const probe = await probeTargetBootstrap(admin);
 
-  if (!probe.execSqlAvailable) {
-    return {
-      success: false,
-      error: probe.error ?? "exec_sql is not available on the Target project",
-    };
+  if (probe.mode === "supaadmin") {
+    const { error } = await admin.rpc(
+      "supaadmin_bootstrap" as never,
+      { tables: tableNames } as never,
+    );
+    if (error) return { success: false, error: error.message };
+
+    await markBootstrapReady(connectionId);
+    return { success: true };
   }
 
-  const sql = buildBootstrapApplySql(tableNames);
-  const { error } = await admin.rpc(
-    "exec_sql" as never,
-    { query: sql } as never,
-  );
-  if (error) {
-    return { success: false, error: error.message };
+  if (probe.mode === "legacy") {
+    const sql = buildBootstrapApplySql(tableNames);
+    const { error } = await admin.rpc(
+      "exec_sql" as never,
+      { query: sql } as never,
+    );
+    if (error) return { success: false, error: error.message };
+
+    await markBootstrapReady(connectionId);
+    return { success: true };
   }
 
-  await markBootstrapReady(connectionId);
-  return { success: true };
+  return {
+    success: false,
+    error: probe.error ?? "Target bootstrap RPCs are not available",
+  };
 }
 
 export async function verifyConnectionBootstrap(
@@ -128,12 +154,12 @@ export async function verifyConnectionBootstrap(
   const admin = createTargetAdminClient(url, serviceRoleEnc);
   const probe = await probeTargetBootstrap(admin);
 
-  if (!probe.execSqlAvailable) {
+  if (probe.mode === "none") {
     return {
       success: false,
       error:
         probe.error ??
-        "exec_sql not found. Run the setup SQL in Target SQL Editor first.",
+        "Bootstrap RPCs not found. Run the setup SQL in Target SQL Editor first.",
       setupSql: buildManualSetupSql(tableNames),
     };
   }
@@ -181,6 +207,30 @@ export async function previewRlsSync(connectionId: string) {
   return { sql, sqlHash, permissionCount: permissions?.length ?? 0 };
 }
 
+async function applyRlsSqlToTarget(
+  admin: Pick<ReturnType<typeof createTargetAdminClient>, "rpc">,
+  sql: string,
+  mode: TargetRpcMode,
+): Promise<{ error?: string }> {
+  if (mode === "supaadmin") {
+    const { error } = await admin.rpc(
+      "supaadmin_apply_rls_sql" as never,
+      { sql } as never,
+    );
+    if (!error) return {};
+    if (!isSupaadminApplyRlsMissingError(error.message)) {
+      return { error: error.message };
+    }
+  }
+
+  const { error: legacyError } = await admin.rpc(
+    "exec_sql" as never,
+    { query: sql } as never,
+  );
+  if (legacyError) return { error: legacyError.message };
+  return {};
+}
+
 export async function executeRlsSync(
   connectionId: string,
   url: string,
@@ -191,15 +241,11 @@ export async function executeRlsSync(
   const { sql, sqlHash } = await previewRlsSync(connectionId);
   const admin = createTargetAdminClient(url, serviceRoleEnc);
   const supabase = await createMetaServerClient();
+  const probe = await probeTargetBootstrap(admin);
 
   try {
-    const { error } = await admin.rpc(
-      "exec_sql" as never,
-      {
-        query: sql,
-      } as never,
-    );
-    if (error) throw new Error(error.message);
+    const applied = await applyRlsSqlToTarget(admin, sql, probe.mode);
+    if (applied.error) throw new Error(applied.error);
 
     await supabase.from("rls_sync_logs").insert({
       connection_id: connectionId,

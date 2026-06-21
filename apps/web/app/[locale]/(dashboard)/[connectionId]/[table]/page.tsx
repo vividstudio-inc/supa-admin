@@ -1,13 +1,16 @@
-import { getConnectionAnonKey } from "@supa-admin/auth/connection-keys";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { DataTableCrud } from "@/components/data-table/data-table-crud";
 import { PageHeader } from "@/components/layout/page-header";
 import { redirect } from "@/i18n/routing";
-import { getConnectionBootstrapStatus } from "@/lib/connection-bootstrap";
+import { router } from "@/lib/orpc/router";
+import { getServerCaller } from "@/lib/orpc/server-caller";
 import { canAccessTable } from "@/lib/permissions";
-import { getShellProfile, getShellTablePermissions } from "@/lib/shell-data";
-import { createMetaServerClient } from "@/lib/supabase/meta/server";
+import {
+  getConnectionBootstrapStatus,
+  getShellProfile,
+  getShellTablePermissions,
+} from "@/lib/shell-data";
 import type { ColumnMeta } from "@/lib/types/database";
 
 export default async function TablePage({
@@ -36,35 +39,25 @@ export default async function TablePage({
   );
   if (!canRead) notFound();
 
-  const supabase = await createMetaServerClient();
-  const connectionSource =
-    profile.role === "platform_admin" ? "connections" : "connections_member";
-  const { data: connection } = await supabase
-    .from(connectionSource)
-    .select("id, name, url")
-    .eq("id", connectionId)
-    .single();
+  const { call } = await getServerCaller();
+  const [{ connection, tables }, { anonKey }] = await Promise.all([
+    call(router.connections.getAccessible, { id: connectionId }),
+    call(router.connections.getAnonKey, { id: connectionId }),
+  ]);
 
   if (!connection) notFound();
 
-  const anonKey = await getConnectionAnonKey(connectionId, profile.id);
-  if (!anonKey) notFound();
-
-  const { data: tableMeta } = await supabase
-    .from("connection_tables")
-    .select("columns")
-    .eq("connection_id", connectionId)
-    .eq("table_name", table)
-    .single();
-
+  const tableMeta = tables.find(
+    (row: { table_name: string }) => row.table_name === table,
+  );
   if (!tableMeta) notFound();
 
   const permissions = await getShellTablePermissions(connectionId);
   const tablePerm = permissions.find((p) => p.table_name === table) ?? {
-    can_read: true,
-    can_create: profile.role === "platform_admin",
-    can_update: profile.role === "platform_admin",
-    can_delete: profile.role === "platform_admin",
+    can_read: false,
+    can_create: false,
+    can_update: false,
+    can_delete: false,
   };
 
   return (

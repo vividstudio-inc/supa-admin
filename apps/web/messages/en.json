@@ -93,14 +93,14 @@
       "verified": "Target setup verified",
       "alreadyReady": "Target is already set up",
       "reloadSql": "Reload SQL",
-      "securityNote": "exec_sql runs arbitrary SQL as SECURITY DEFINER. Only service_role may EXECUTE it. Never expose the Service Role Key in client code or logs."
+      "securityNote": "supaadmin_bootstrap / supaadmin_apply_rls_sql are allowlisted SECURITY DEFINER RPCs. Only service_role may EXECUTE them. Never expose the Service Role Key in client code or logs."
     },
     "onboarding": {
       "title": "Connection onboarding",
       "description": "Complete these steps for \"{name}\" before using CRUD.",
       "checklist": "Setup checklist",
       "checklistHint": "Finish every step so Target login and permissions work without the Supabase Dashboard.",
-      "stepBootstrap": "Install Target bootstrap (exec_sql, permissions helper, GRANT)",
+      "stepBootstrap": "Install Target bootstrap (supaadmin_bootstrap, permissions helper, GRANT)",
       "stepSchema": "Sync schema from Target",
       "stepRoles": "Configure role permissions and sync RLS",
       "stepProvision": "Invite users and provision Target accounts",

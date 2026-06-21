@@ -42,7 +42,6 @@ export const coverageConfig = {
     // oRPC wiring (handlers tested directly; browser client needs jsdom/E2E)
     "lib/orpc/router.ts",
     "lib/orpc/client.browser.ts",
-    "lib/connection-bootstrap.ts",
 
     // Supabase / Next.js client factories (framework glue)
     "**/meta-client.ts",

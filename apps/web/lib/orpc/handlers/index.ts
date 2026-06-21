@@ -1,5 +1,6 @@
 import "server-only";
 import { ORPCError } from "@orpc/server";
+import { getConnectionAnonKey } from "@supa-admin/auth/connection-keys";
 import {
   getUserConnectionIds,
   isSetupComplete,
@@ -10,6 +11,7 @@ import {
   createMetaServiceClient,
 } from "@supa-admin/auth/server";
 import { encrypt } from "@supa-admin/crypto";
+import { checkRateLimit } from "@supa-admin/rate-limit";
 import {
   buildAppMetadataPermissions,
   executeRlsSync,
@@ -27,8 +29,34 @@ import { env } from "@/lib/env";
 import { os, withAdmin, withAuth } from "../os";
 import { verifySetupSecret } from "../verify-setup-secret";
 
+async function assertRateLimit(
+  key: string,
+  limit: number,
+  windowSec: number,
+): Promise<void> {
+  const result = await checkRateLimit(key, limit, windowSec);
+  if (!result.allowed) {
+    throw new ORPCError("TOO_MANY_REQUESTS", {
+      message: "Rate limit exceeded",
+      data: { retryAfterSec: result.retryAfterSec },
+    });
+  }
+}
+
+async function requireConnectionMembership(
+  connectionId: string,
+  userId: string,
+  role: "platform_admin" | "member",
+): Promise<void> {
+  const allowedIds = await getUserConnectionIds(userId, role);
+  if (!allowedIds.includes(connectionId)) {
+    throw new ORPCError("FORBIDDEN", { message: "Forbidden" });
+  }
+}
+
 export const setupHandlers = os.setup.router({
-  createAdmin: os.setup.createAdmin.handler(async ({ input }) => {
+  createAdmin: os.setup.createAdmin.handler(async ({ input, context }) => {
+    await assertRateLimit(`setup:create:${context.clientIp}`, 5, 3600);
     verifySetupSecret(input.setupSecret, env.SETUP_SECRET);
 
     const service = createMetaServiceClient();
@@ -78,9 +106,10 @@ export const setupHandlers = os.setup.router({
     }
   }),
 
-  isComplete: os.setup.isComplete.handler(async () => ({
-    complete: await isSetupComplete(),
-  })),
+  isComplete: os.setup.isComplete.handler(async ({ context }) => {
+    await assertRateLimit(`setup:check:${context.clientIp}`, 30, 60);
+    return { complete: await isSetupComplete() };
+  }),
 });
 
 export const connectionsHandlers = os.connections.router({
@@ -210,6 +239,71 @@ export const connectionsHandlers = os.connections.router({
       throw new ORPCError("INTERNAL_SERVER_ERROR", { message: error.message });
     return { success: true as const };
   }),
+
+  listAccessible: os.connections.listAccessible
+    .use(withAuth)
+    .handler(async ({ context }) => {
+      const connectionIds = await getUserConnectionIds(
+        context.profile.id,
+        context.profile.role,
+      );
+      if (connectionIds.length === 0) {
+        return { connections: [] };
+      }
+
+      const service = createMetaServiceClient();
+      const { data, error } = await service
+        .from("connections")
+        .select(
+          "id, name, url, schema_cached_at, bootstrap_status, bootstrap_verified_at, created_at, updated_at",
+        )
+        .in("id", connectionIds)
+        .order("created_at", { ascending: false });
+      if (error) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", {
+          message: error.message,
+        });
+      }
+      return { connections: data ?? [] };
+    }),
+
+  getAccessible: os.connections.getAccessible
+    .use(withAuth)
+    .handler(async ({ input, context }) => {
+      await requireConnectionMembership(
+        input.id,
+        context.profile.id,
+        context.profile.role,
+      );
+
+      const service = createMetaServiceClient();
+      const { data: connection, error } = await service
+        .from("connections")
+        .select("id, name, url, bootstrap_status")
+        .eq("id", input.id)
+        .single();
+      if (error || !connection) {
+        throw new ORPCError("NOT_FOUND", { message: "Connection not found" });
+      }
+
+      const { data: tables } = await service
+        .from("connection_tables")
+        .select("*")
+        .eq("connection_id", input.id)
+        .order("table_name");
+
+      return { connection, tables: tables ?? [] };
+    }),
+
+  getAnonKey: os.connections.getAnonKey
+    .use(withAuth)
+    .handler(async ({ input, context }) => {
+      const anonKey = await getConnectionAnonKey(input.id, context.profile.id);
+      if (!anonKey) {
+        throw new ORPCError("FORBIDDEN", { message: "Forbidden" });
+      }
+      return { anonKey };
+    }),
 
   schemaSync: os.connections.schemaSync
     .use(withAdmin)
@@ -345,10 +439,10 @@ export const connectionsHandlers = os.connections.router({
           throw new ORPCError("FORBIDDEN", { message: "Forbidden" });
         }
 
-        const supabase = await createMetaServerClient();
-        const { data: connection, error } = await supabase
+        const service = createMetaServiceClient();
+        const { data: connection, error } = await service
           .from("connections")
-          .select("*")
+          .select("url, service_role_enc, bootstrap_status")
           .eq("id", input.connectionId)
           .single();
         if (error || !connection) {
@@ -643,4 +737,52 @@ export const provisionHandlers = os.provision.router({
 
       return { success: true as const, targetUserId: targetUser.user.id };
     }),
+});
+
+export const appHandlers = os.app.router({
+  shell: os.app.shell.use(withAuth).handler(async ({ context }) => {
+    const connectionIds = await getUserConnectionIds(
+      context.profile.id,
+      context.profile.role,
+    );
+
+    let connections: Array<{ id: string; name: string }> = [];
+    if (connectionIds.length > 0) {
+      const service = createMetaServiceClient();
+      const { data } = await service
+        .from("connections")
+        .select("id, name")
+        .in("id", connectionIds)
+        .order("name");
+      connections = data ?? [];
+    }
+
+    return {
+      profile: {
+        id: context.profile.id,
+        email: context.profile.email,
+        display_name: context.profile.display_name,
+        role: context.profile.role,
+        created_at: context.profile.created_at,
+      },
+      connections,
+    };
+  }),
+});
+
+export const dashboardHandlers = os.dashboard.router({
+  stats: os.dashboard.stats.use(withAdmin).handler(async () => {
+    const supabase = await createMetaServerClient();
+    const { count: userCount } = await supabase
+      .from("profiles")
+      .select("*", { count: "exact", head: true });
+    const { count: roleCount } = await supabase
+      .from("roles")
+      .select("*", { count: "exact", head: true });
+    return { userCount: userCount ?? 0, roleCount: roleCount ?? 0 };
+  }),
+});
+
+export const healthHandlers = os.health.router({
+  ping: os.health.ping.handler(async () => ({ ok: true as const })),
 });

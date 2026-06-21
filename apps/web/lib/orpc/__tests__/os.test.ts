@@ -68,14 +68,16 @@ describe("withAdmin", () => {
   it("when actorId is null, then throws UNAUTHORIZED", async () => {
     const next = vi.fn();
     await expect(
-      invokeWithAdmin({ actorId: null }, next),
+      invokeWithAdmin({ actorId: null, clientIp: "127.0.0.1" }, next),
     ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
     expect(next).not.toHaveBeenCalled();
   });
 
   it("when profile is not platform_admin, then throws FORBIDDEN", async () => {
     mockGetCurrentProfile.mockResolvedValue({ id: "u1", role: "member" });
-    await expect(invokeWithAdmin({ actorId: "u1" })).rejects.toMatchObject({
+    await expect(
+      invokeWithAdmin({ actorId: "u1", clientIp: "127.0.0.1" }),
+    ).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
   });
@@ -89,7 +91,7 @@ describe("withAdmin", () => {
         context,
       }),
     );
-    await invokeWithAdmin({ actorId: "admin-1" }, next);
+    await invokeWithAdmin({ actorId: "admin-1", clientIp: "127.0.0.1" }, next);
     expect(next).toHaveBeenCalledWith({
       context: expect.objectContaining({
         actorId: "admin-1",
@@ -100,7 +102,9 @@ describe("withAdmin", () => {
 
   it("when profile missing, then throws FORBIDDEN", async () => {
     mockGetCurrentProfile.mockResolvedValue(null);
-    await expect(invokeWithAdmin({ actorId: "u1" })).rejects.toMatchObject({
+    await expect(
+      invokeWithAdmin({ actorId: "u1", clientIp: "127.0.0.1" }),
+    ).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
   });
@@ -112,7 +116,9 @@ describe("withAuth", () => {
   });
 
   it("when actorId is null, then throws UNAUTHORIZED", async () => {
-    await expect(invokeWithAuth({ actorId: null })).rejects.toMatchObject({
+    await expect(
+      invokeWithAuth({ actorId: null, clientIp: "127.0.0.1" }),
+    ).rejects.toMatchObject({
       code: "UNAUTHORIZED",
     });
   });
@@ -126,7 +132,7 @@ describe("withAuth", () => {
         context,
       }),
     );
-    await invokeWithAuth({ actorId: "user-1" }, next);
+    await invokeWithAuth({ actorId: "user-1", clientIp: "127.0.0.1" }, next);
     expect(next).toHaveBeenCalledWith({
       context: expect.objectContaining({ profile }),
     });

@@ -1,12 +1,14 @@
-import { getConnectionAnonKey } from "@supa-admin/auth/connection-keys";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ConnectForm } from "@/components/connect/connect-form";
 import { PageHeader } from "@/components/layout/page-header";
 import { redirect } from "@/i18n/routing";
-import { getConnectionBootstrapStatus } from "@/lib/connection-bootstrap";
-import { getShellProfile } from "@/lib/shell-data";
-import { createMetaServerClient } from "@/lib/supabase/meta/server";
+import { router } from "@/lib/orpc/router";
+import { getServerCaller } from "@/lib/orpc/server-caller";
+import {
+  getConnectionBootstrapStatus,
+  getShellProfile,
+} from "@/lib/shell-data";
 
 export default async function ConnectPage({
   params,
@@ -25,19 +27,13 @@ export default async function ConnectPage({
     redirect({ href: `/${connectionId}/setup`, locale });
   }
 
-  const supabase = await createMetaServerClient();
-  const connectionSource =
-    profile.role === "platform_admin" ? "connections" : "connections_member";
-  const { data: connection } = await supabase
-    .from(connectionSource)
-    .select("id, name, url")
-    .eq("id", connectionId)
-    .single();
+  const { call } = await getServerCaller();
+  const [{ connection }, { anonKey }] = await Promise.all([
+    call(router.connections.getAccessible, { id: connectionId }),
+    call(router.connections.getAnonKey, { id: connectionId }),
+  ]);
 
   if (!connection) notFound();
-
-  const anonKey = await getConnectionAnonKey(connectionId, profile.id);
-  if (!anonKey) notFound();
 
   return (
     <div className="mx-auto max-w-lg space-y-6">

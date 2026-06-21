@@ -21,7 +21,9 @@ vi.mock("@supa-admin/rls", () => ({
   }),
   executeRlsSync: vi.fn(),
   buildAppMetadataPermissions: vi.fn(),
-  probeConnectionBootstrap: vi.fn().mockResolvedValue({ ready: true }),
+  probeConnectionBootstrap: vi
+    .fn()
+    .mockResolvedValue({ ready: true, mode: "supaadmin" }),
   executeTargetBootstrap: vi.fn().mockResolvedValue({ success: true }),
   verifyConnectionBootstrap: vi
     .fn()
@@ -79,7 +81,7 @@ describe("setupHandlers", () => {
   it("when isComplete called, then returns complete flag", async () => {
     const { setupHandlers } = await import("../handlers/index.js");
     const result = await callWithoutInput(setupHandlers.isComplete, {
-      context: { actorId: null },
+      context: { actorId: null, clientIp: "127.0.0.1" },
     });
     expect(result).toEqual({ complete: true });
   });

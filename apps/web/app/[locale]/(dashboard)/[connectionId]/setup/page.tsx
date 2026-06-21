@@ -4,10 +4,13 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ConnectionOnboardingWizard } from "@/components/connections/connection-onboarding-wizard";
 import { PageHeader } from "@/components/layout/page-header";
 import { redirect } from "@/i18n/routing";
-import { getConnectionBootstrapStatus } from "@/lib/connection-bootstrap";
+import { router } from "@/lib/orpc/router";
+import { getServerCaller } from "@/lib/orpc/server-caller";
 import { requirePlatformAdmin } from "@/lib/permissions";
-import { getShellProfile } from "@/lib/shell-data";
-import { createMetaServerClient } from "@/lib/supabase/meta/server";
+import {
+  getConnectionBootstrapStatus,
+  getShellProfile,
+} from "@/lib/shell-data";
 
 export default async function TargetSetupPage({
   params,
@@ -23,14 +26,10 @@ export default async function TargetSetupPage({
   const bootstrapStatus = await getConnectionBootstrapStatus(connectionId);
   const t = await getTranslations();
 
-  const supabase = await createMetaServerClient();
-  const connectionSource =
-    profile.role === "platform_admin" ? "connections" : "connections_member";
-  const { data: connection } = await supabase
-    .from(connectionSource)
-    .select("id, name, url")
-    .eq("id", connectionId)
-    .single();
+  const { call } = await getServerCaller();
+  const { connection } = await call(router.connections.getAccessible, {
+    id: connectionId,
+  });
 
   if (!connection) notFound();
 

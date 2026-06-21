@@ -1,0 +1,22 @@
+{
+  "name": "@supa-admin/rate-limit",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@upstash/ratelimit": "^2.0.5",
+    "@upstash/redis": "^1.34.9",
+    "redis": "^4.7.0"
+  },
+  "devDependencies": {
+    "@supa-admin/tsconfig": "workspace:*",
+    "@supa-admin/vitest-config": "workspace:*",
+    "typescript": "~5.8.3",
+    "vitest": "^3.2.4"
+  }
+}
