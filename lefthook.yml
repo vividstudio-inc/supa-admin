@@ -7,11 +7,12 @@ pre-commit:
       glob: "packages/shared/orpc-contract/src/**/*.ts"
       run: pnpm --filter @supa-admin/orpc-contract generate:openapi && git add packages/shared/orpc-contract/spec.json
     prevent-migration-commits:
-      glob: "supabase/migrations/**/*"
+      glob: "supabase/migrations/*.sql"
       run: |
         echo ""
-        echo "❌ supabase/migrations/** への手動コミットは禁止です。"
+        echo "❌ supabase/migrations/*.sql への手動コミットは禁止です。"
         echo "   マイグレーション SQL は Drizzle schema から CI が生成します。"
+        echo "   (meta/ の Drizzle journal は手動コミット可)"
         echo ""
         exit 1
     biome-check:
