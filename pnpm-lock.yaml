@@ -751,9 +751,6 @@ importers:
       '@supa-admin/vitest-config':
         specifier: workspace:*
         version: link:../../../tooling/vitest
-      '@types/node':
-        specifier: ^20.12.7
-        version: 20.19.43
       typescript:
         specifier: ~5.8.3
         version: 5.8.3
