@@ -8,6 +8,7 @@ import {
   checkA3,
   checkA4,
   checkA5,
+  checkA6,
   runArchitectureChecks,
 } from "../architecture-check";
 
@@ -120,6 +121,25 @@ describe("architecture-check", () => {
 
     expect(violations).toHaveLength(1);
     expect(violations[0]?.file).toContain("initial_schema.sql");
+  });
+
+  it("A6 flags root rate-limit import in middleware and redis import in edge entry", () => {
+    fixtureRoot = mkdtempSync(join(tmpdir(), "arch-check-a6-"));
+    writeFixture(
+      fixtureRoot,
+      "apps/web/middleware.ts",
+      `import { checkRateLimit } from "@supa-admin/rate-limit";\n`,
+    );
+    writeFixture(
+      fixtureRoot,
+      "packages/shared/rate-limit/src/edge.ts",
+      `import { createClient } from "redis";\n`,
+    );
+
+    const violations = checkA6(fixtureRoot);
+
+    expect(violations).toHaveLength(2);
+    expect(violations.every((violation) => violation.rule === "A6")).toBe(true);
   });
 
   it("runArchitectureChecks skips A5 by default", () => {

@@ -156,7 +156,15 @@
     "page": "ページ",
     "of": "/",
     "rows": "件",
-    "next": "次へ"
+    "next": "次へ",
+    "selectForeignRow": "{table} からレコードを選択",
+    "selectForeignRowShort": "選択",
+    "foreignKeyPreview": "{table} の参照行",
+    "viewDetail": "詳細を見る",
+    "foreignKeyNoAccess": "参照先テーブルの読み取り権限がないため、UUID を手入力してください。",
+    "resyncSchemaForFkTitle": "外部キー情報が古い可能性があります",
+    "resyncSchemaForFk": "外部キーの選択とリンクを有効にするには、接続先でスキーマ同期を実行してください:",
+    "filteredByColumn": "{column} = {value} で絞り込み中"
   },
   "users": {
     "title": "ユーザー管理",
@@ -172,7 +180,8 @@
     "provision": "接続先ユーザー作成",
     "overrides": "個別権限上書き",
     "inherit": "継承",
-    "overrideHint": "クリックで 継承 → 許可 → 拒否 を切り替えます"
+    "overrideHint": "クリックで 継承 → 許可 → 拒否 を切り替えます",
+    "adminRbacHint": "プラットフォーム管理者は全接続先・全テーブルにアクセスできます。ロール割当・接続先アクセス・個別権限上書きは適用されません。"
   },
   "roles": {
     "title": "ロール管理",

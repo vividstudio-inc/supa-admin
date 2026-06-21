@@ -7,7 +7,7 @@ describe("checkRateLimit", () => {
   });
 
   it("when vitest env, then allows all requests (no-op)", async () => {
-    const { checkRateLimit } = await import("../src/index.js");
+    const { checkRateLimit } = await import("../src/index");
     const result = await checkRateLimit("test-key", 1, 60);
     expect(result.allowed).toBe(true);
   });
@@ -15,7 +15,7 @@ describe("checkRateLimit", () => {
   it("when RATE_LIMIT_DISABLED, then allows all requests", async () => {
     vi.stubEnv("VITEST", "");
     vi.stubEnv("RATE_LIMIT_DISABLED", "true");
-    const { checkRateLimit } = await import("../src/index.js");
+    const { checkRateLimit } = await import("../src/index");
     const result = await checkRateLimit("test-key", 1, 60);
     expect(result.allowed).toBe(true);
   });
@@ -47,7 +47,7 @@ describe("checkRateLimit", () => {
     }));
 
     const { checkRateLimit, resetRateLimitClients } = await import(
-      "../src/index.js"
+      "../src/index"
     );
     const result = await checkRateLimit("local-key", 5, 60);
     expect(result.allowed).toBe(true);
@@ -77,11 +77,30 @@ describe("checkRateLimit", () => {
     }));
 
     const { checkRateLimit, resetRateLimitClients } = await import(
-      "../src/index.js"
+      "../src/index"
     );
     const result = await checkRateLimit("upstash-key", 1, 60);
     expect(result.allowed).toBe(false);
     expect(result.retryAfterSec).toBeGreaterThan(0);
     await resetRateLimitClients();
+  });
+});
+
+describe("checkRateLimit (edge entry)", () => {
+  beforeEach(() => {
+    vi.unstubAllEnvs();
+    vi.stubEnv("VITEST", "");
+    vi.stubEnv("SKIP_ENV_VALIDATION", "");
+    vi.stubEnv("RATE_LIMIT_DISABLED", "");
+    vi.stubEnv("NODE_ENV", "development");
+  });
+
+  it("when local development, then allows without redis", async () => {
+    vi.resetModules();
+    vi.stubEnv("REDIS_URL", "redis://localhost:6379");
+
+    const { checkRateLimit } = await import("../src/edge");
+    const result = await checkRateLimit("edge-key", 1, 60);
+    expect(result.allowed).toBe(true);
   });
 });

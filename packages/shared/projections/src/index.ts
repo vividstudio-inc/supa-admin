@@ -7,6 +7,11 @@ export type TablePermission = {
   can_delete: boolean;
 };
 
+export type ForeignKeyMeta = {
+  table: string;
+  column: string;
+};
+
 export type ColumnMeta = {
   name: string;
   data_type: string;
@@ -14,6 +19,7 @@ export type ColumnMeta = {
   column_default: string | null;
   is_primary_key: boolean;
   is_identity: boolean;
+  foreign_key?: ForeignKeyMeta | null;
 };
 
 export type Profile = {
@@ -216,14 +222,9 @@ export function resolvePermissionsRecord(
 }
 
 export function isTextColumn(dataType: string): boolean {
-  return [
-    "text",
-    "varchar",
-    "character varying",
-    "char",
-    "uuid",
-    "citext",
-  ].some((t) => dataType.includes(t));
+  return ["text", "varchar", "character varying", "char", "citext"].some((t) =>
+    dataType.includes(t),
+  );
 }
 
 export function isJsonColumn(dataType: string): boolean {

@@ -225,101 +225,113 @@ export function ConnectionList({
                     ? new Date(conn.schema_cached_at).toLocaleString()
                     : "-"}
                 </TableCell>
-                <TableCell className="space-x-2">
-                  {conn.bootstrap_status === "pending" && (
+                <TableCell>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {conn.bootstrap_status === "pending" && (
+                      <Button
+                        size="sm"
+                        variant="default"
+                        onClick={() => openSetup(conn.id)}
+                      >
+                        {t("connections.bootstrap.setup")}
+                      </Button>
+                    )}
                     <Button
                       size="sm"
-                      variant="default"
-                      onClick={() => openSetup(conn.id)}
+                      variant="outline"
+                      onClick={() => syncSchema(conn.id)}
                     >
-                      {t("connections.bootstrap.setup")}
+                      {t("connections.syncSchema")}
                     </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => syncSchema(conn.id)}
-                  >
-                    {t("connections.syncSchema")}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => previewRls(conn.id)}
-                    disabled={conn.bootstrap_status !== "ready"}
-                  >
-                    {t("connections.syncRls")}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => revealWebhookSecret(conn.id)}
-                    disabled={conn.bootstrap_status !== "ready"}
-                  >
-                    <KeyRound className="size-3.5" />
-                    {t("connections.webhookSecret.reveal")}
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger
-                      render={
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={conn.bootstrap_status !== "ready"}
-                        />
-                      }
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => previewRls(conn.id)}
+                      disabled={conn.bootstrap_status !== "ready"}
                     >
-                      <RotateCw className="size-3.5" />
-                      {t("connections.webhookSecret.rotate")}
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          {t("connections.webhookSecret.rotateConfirm")}
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {t("connections.webhookSecret.rotateWarning")}
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>
-                          {t("common.cancel")}
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => rotateWebhookSecret(conn.id)}
+                      {t("connections.syncRls")}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => revealWebhookSecret(conn.id)}
+                      disabled={conn.bootstrap_status !== "ready"}
+                    >
+                      <KeyRound className="size-3.5" />
+                      {t("connections.webhookSecret.reveal")}
+                    </Button>
+                    <div className="contents">
+                      <AlertDialog>
+                        <AlertDialogTrigger
+                          render={
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={conn.bootstrap_status !== "ready"}
+                            />
+                          }
                         >
+                          <RotateCw className="size-3.5" />
                           {t("connections.webhookSecret.rotate")}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                  <AlertDialog>
-                    <AlertDialogTrigger
-                      render={<Button size="sm" variant="destructive" />}
-                    >
-                      {t("common.delete")}
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          {t("common.confirm")}
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {t("connections.deleteConfirm")}
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>
-                          {t("common.cancel")}
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => deleteConnection(conn.id)}
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              {t("connections.webhookSecret.rotateConfirm")}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {t("connections.webhookSecret.rotateWarning")}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>
+                              {t("common.cancel")}
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => rotateWebhookSecret(conn.id)}
+                            >
+                              {t("connections.webhookSecret.rotate")}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                    <div className="contents">
+                      <AlertDialog>
+                        <AlertDialogTrigger
+                          render={
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            />
+                          }
                         >
                           {t("common.delete")}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              {t("common.confirm")}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {t("connections.deleteConfirm")}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>
+                              {t("common.cancel")}
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteConnection(conn.id)}
+                            >
+                              {t("common.delete")}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

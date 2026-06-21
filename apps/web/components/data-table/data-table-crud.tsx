@@ -15,6 +15,8 @@ import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DynamicForm } from "@/components/dynamic-form/dynamic-form";
+import { ForeignKeyCell } from "@/components/foreign-key/foreign-key-cell";
+import { ForeignKeyResyncBanner } from "@/components/foreign-key/foreign-key-resync-banner";
 import { EmptyState } from "@/components/patterns/empty-state";
 import { TableSkeleton } from "@/components/patterns/table-skeleton";
 import {
@@ -43,11 +45,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  type ConnectionTableMeta,
+  canUseForeignKey,
+  formatRowLabel,
+  getDisplayLabelColumn,
+  getTableMeta,
+  needsForeignKeyResync,
+} from "@/lib/foreign-key/utils";
 import { createTargetBrowserClient } from "@/lib/supabase/target/client";
 import {
   type ColumnMeta,
   humanizeDbError,
   isTextColumn,
+  type ResolvedPermission,
   type TablePermission,
 } from "@/lib/types/database";
 
@@ -58,17 +69,23 @@ type DataTableCrudProps = {
   anonKey: string;
   columns: ColumnMeta[];
   permissions: TablePermission;
+  allTables: ConnectionTableMeta[];
+  tablePermissions: ResolvedPermission[];
+  initialEqFilter?: { column: string; value: string } | null;
 };
 
 const PAGE_SIZE = 20;
 
 export function DataTableCrud({
-  connectionId: _connectionId,
+  connectionId,
   tableName,
   url,
   anonKey,
   columns,
   permissions,
+  allTables,
+  tablePermissions,
+  initialEqFilter = null,
 }: DataTableCrudProps) {
   const t = useTranslations();
   const client = useMemo(
@@ -90,6 +107,25 @@ export function DataTableCrud({
   );
 
   const textColumns = columns.filter((c) => isTextColumn(c.data_type));
+  const showResyncBanner = needsForeignKeyResync(allTables);
+
+  const selectQuery = useMemo(() => {
+    const embeds = columns
+      .filter(
+        (col) =>
+          col.foreign_key &&
+          canUseForeignKey(col.foreign_key, tablePermissions),
+      )
+      .map((col) => {
+        const fk = col.foreign_key!;
+        const referenced = getTableMeta(allTables, fk.table);
+        const labelColumn = getDisplayLabelColumn(referenced?.columns ?? []);
+        const fields = labelColumn?.name ?? fk.column;
+        return `${fk.table}(${fields})`;
+      });
+
+    return embeds.length > 0 ? `*,${embeds.join(",")}` : "*";
+  }, [allTables, columns, tablePermissions]);
 
   useEffect(() => {
     void loadData();
@@ -103,7 +139,11 @@ export function DataTableCrud({
     nextSortAsc = sortAsc,
   ) {
     setLoading(true);
-    let query = client.from(tableName).select("*", { count: "exact" });
+    let query = client.from(tableName).select(selectQuery, { count: "exact" });
+
+    if (initialEqFilter) {
+      query = query.eq(initialEqFilter.column, initialEqFilter.value);
+    }
 
     if (nextSearch && textColumns.length > 0) {
       const safeSearch = sanitizePostgrestFilter(nextSearch);
@@ -138,7 +178,7 @@ export function DataTableCrud({
       return;
     }
 
-    setRows(data ?? []);
+    setRows((data ?? []) as unknown as Record<string, unknown>[]);
     setTotal(count ?? 0);
   }
 
@@ -205,11 +245,66 @@ export function DataTableCrud({
     toast.success(t("common.success"));
   }
 
+  function getForeignKeyLabel(
+    row: Record<string, unknown>,
+    col: ColumnMeta,
+  ): string | undefined {
+    const fk = col.foreign_key;
+    if (!fk) return undefined;
+
+    const embedded = row[fk.table];
+    if (embedded && typeof embedded === "object" && !Array.isArray(embedded)) {
+      const referenced = getTableMeta(allTables, fk.table);
+      const label = formatRowLabel(
+        embedded as Record<string, unknown>,
+        referenced?.columns ?? [],
+      );
+      return label || undefined;
+    }
+
+    return undefined;
+  }
+
+  function renderCell(row: Record<string, unknown>, col: ColumnMeta) {
+    const value = row[col.name];
+
+    if (col.foreign_key) {
+      const referenced = getTableMeta(allTables, col.foreign_key.table);
+      return (
+        <ForeignKeyCell
+          value={value}
+          label={getForeignKeyLabel(row, col)}
+          foreignKey={col.foreign_key}
+          referencedColumns={referenced?.columns ?? []}
+          client={client}
+          connectionId={connectionId}
+          canPreview={canUseForeignKey(col.foreign_key, tablePermissions)}
+        />
+      );
+    }
+
+    return formatCell(value);
+  }
+
   const displayColumns = columns.slice(0, 8);
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   return (
     <div className="space-y-4">
+      <ForeignKeyResyncBanner
+        connectionId={connectionId}
+        show={showResyncBanner}
+      />
+
+      {initialEqFilter ? (
+        <p className="text-sm text-muted-foreground">
+          {t("table.filteredByColumn", {
+            column: initialEqFilter.column,
+            value: initialEqFilter.value,
+          })}
+        </p>
+      ) : null}
+
       <div className="flex flex-wrap items-center gap-4">
         <Input
           placeholder={t("common.search")}
@@ -236,7 +331,7 @@ export function DataTableCrud({
 
       {loading && rows.length === 0 ? (
         <TableSkeleton columns={displayColumns.length + 1} />
-      ) : !loading && rows.length === 0 && !search ? (
+      ) : !loading && rows.length === 0 && !search && !initialEqFilter ? (
         <EmptyState
           icon={Database}
           title={t("table.noData")}
@@ -307,7 +402,7 @@ export function DataTableCrud({
                         key={col.name}
                         className="max-w-[200px] truncate"
                       >
-                        {formatCell(row[col.name])}
+                        {renderCell(row, col)}
                       </TableCell>
                     ))}
                     <TableCell className="space-x-1">
@@ -341,7 +436,7 @@ export function DataTableCrud({
         </div>
       )}
 
-      {rows.length > 0 || search ? (
+      {rows.length > 0 || search || initialEqFilter ? (
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">
             {t("table.page")} {page + 1} {t("table.of")}{" "}
@@ -390,6 +485,9 @@ export function DataTableCrud({
             initialValues={editRow ?? undefined}
             onSubmit={handleSave}
             onCancel={() => setFormOpen(false)}
+            client={client}
+            allTables={allTables}
+            permissions={tablePermissions}
           />
         </DialogContent>
       </Dialog>

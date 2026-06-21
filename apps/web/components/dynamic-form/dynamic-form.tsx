@@ -1,18 +1,22 @@
 "use client";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
+import { ForeignKeyField } from "@/components/foreign-key/foreign-key-field";
 import { JsonEditor } from "@/components/json-editor/json-editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import type { ConnectionTableMeta } from "@/lib/foreign-key/utils";
 import {
   type ColumnMeta,
   isBooleanColumn,
   isDateColumn,
   isJsonColumn,
   isNumericColumn,
+  type ResolvedPermission,
 } from "@/lib/types/database";
 
 type DynamicFormProps = {
@@ -20,6 +24,9 @@ type DynamicFormProps = {
   initialValues?: Record<string, unknown>;
   onSubmit: (values: Record<string, unknown>) => void;
   onCancel: () => void;
+  client?: SupabaseClient;
+  allTables?: ConnectionTableMeta[];
+  permissions?: ResolvedPermission[];
 };
 
 export function DynamicForm({
@@ -27,6 +34,9 @@ export function DynamicForm({
   initialValues,
   onSubmit,
   onCancel,
+  client,
+  allTables = [],
+  permissions = [],
 }: DynamicFormProps) {
   const t = useTranslations("common");
   const [values, setValues] = useState<Record<string, unknown>>(() => {
@@ -67,6 +77,72 @@ export function DynamicForm({
     setValues((prev) => ({ ...prev, [name]: value }));
   }
 
+  function renderField(col: ColumnMeta) {
+    if (
+      col.foreign_key &&
+      client &&
+      allTables.length > 0 &&
+      permissions.length > 0
+    ) {
+      return (
+        <ForeignKeyField
+          column={col}
+          foreignKey={col.foreign_key}
+          value={values[col.name]}
+          onChange={(next) => setValue(col.name, next)}
+          client={client}
+          allTables={allTables}
+          permissions={permissions}
+        />
+      );
+    }
+
+    if (isBooleanColumn(col.data_type)) {
+      return (
+        <Switch
+          checked={Boolean(values[col.name])}
+          onCheckedChange={(v) => setValue(col.name, v)}
+        />
+      );
+    }
+
+    if (isJsonColumn(col.data_type)) {
+      return (
+        <JsonEditor
+          value={values[col.name]}
+          onChange={(v) => setValue(col.name, v)}
+        />
+      );
+    }
+
+    if (isDateColumn(col.data_type)) {
+      return (
+        <Input
+          type="datetime-local"
+          value={String(values[col.name] ?? "")}
+          onChange={(e) => setValue(col.name, e.target.value)}
+        />
+      );
+    }
+
+    if (isNumericColumn(col.data_type)) {
+      return (
+        <Input
+          type="number"
+          value={String(values[col.name] ?? "")}
+          onChange={(e) => setValue(col.name, e.target.value)}
+        />
+      );
+    }
+
+    return (
+      <Input
+        value={String(values[col.name] ?? "")}
+        onChange={(e) => setValue(col.name, e.target.value)}
+      />
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {columns.map((col) => (
@@ -80,35 +156,7 @@ export function DynamicForm({
               {col.data_type}
             </span>
           </Label>
-
-          {isBooleanColumn(col.data_type) ? (
-            <Switch
-              checked={Boolean(values[col.name])}
-              onCheckedChange={(v) => setValue(col.name, v)}
-            />
-          ) : isJsonColumn(col.data_type) ? (
-            <JsonEditor
-              value={values[col.name]}
-              onChange={(v) => setValue(col.name, v)}
-            />
-          ) : isDateColumn(col.data_type) ? (
-            <Input
-              type="datetime-local"
-              value={String(values[col.name] ?? "")}
-              onChange={(e) => setValue(col.name, e.target.value)}
-            />
-          ) : isNumericColumn(col.data_type) ? (
-            <Input
-              type="number"
-              value={String(values[col.name] ?? "")}
-              onChange={(e) => setValue(col.name, e.target.value)}
-            />
-          ) : (
-            <Input
-              value={String(values[col.name] ?? "")}
-              onChange={(e) => setValue(col.name, e.target.value)}
-            />
-          )}
+          {renderField(col)}
         </div>
       ))}
 

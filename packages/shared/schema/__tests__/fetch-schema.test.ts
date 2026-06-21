@@ -40,6 +40,18 @@ describe("fetchSchemaViaRest", () => {
         json: async () => ({
           definitions: {
             _internal: { properties: { x: { type: "string" } } },
+            comments: {
+              properties: {
+                id: { type: "string", format: "uuid" },
+                post_id: {
+                  type: "string",
+                  format: "uuid",
+                  description:
+                    "Note:\nThis is a Foreign Key to `posts.id`.<fk table='posts' column='id'/>",
+                },
+              },
+              required: ["id", "post_id"],
+            },
             posts: {
               properties: {
                 id: { type: "string", format: "uuid" },
@@ -57,9 +69,19 @@ describe("fetchSchemaViaRest", () => {
       encrypt("service-role-key"),
     );
     expect(result.error).toBeUndefined();
-    expect(result.tables).toHaveLength(1);
-    expect(result.tables[0]?.table_name).toBe("posts");
-    expect(result.tables[0]?.columns).toEqual(
+    expect(result.tables).toHaveLength(2);
+    const comments = result.tables.find((t) => t.table_name === "comments");
+    expect(comments?.columns).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: "post_id",
+          foreign_key: { table: "posts", column: "id" },
+        }),
+      ]),
+    );
+    const posts = result.tables.find((t) => t.table_name === "posts");
+    expect(posts?.table_name).toBe("posts");
+    expect(posts?.columns).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           name: "id",

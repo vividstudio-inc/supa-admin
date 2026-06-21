@@ -1,4 +1,4 @@
-import { checkRateLimit } from "@supa-admin/rate-limit";
+import { checkRateLimit } from "@supa-admin/rate-limit/edge";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
@@ -26,20 +26,43 @@ function applyIntl(request: NextRequest, base: NextResponse) {
 function buildContentSecurityPolicy(nonce: string): string {
   const metaUrl = env.NEXT_PUBLIC_META_SUPABASE_URL;
   const extraConnect = process.env.CSP_EXTRA_CONNECT_SRC ?? "";
+  const localConnect: string[] = [];
+  if (process.env.ALLOW_LOCAL_TARGET_URLS === "true") {
+    const targetUrl = process.env.LOCAL_TARGET_SUPABASE_URL;
+    if (targetUrl) {
+      try {
+        const origin = new URL(targetUrl).origin;
+        localConnect.push(origin);
+        localConnect.push(
+          origin.startsWith("https://")
+            ? origin.replace(/^https:/, "wss:")
+            : origin.replace(/^http:/, "ws:"),
+        );
+      } catch {
+        /* ignore invalid LOCAL_TARGET_SUPABASE_URL */
+      }
+    }
+  }
   const connectSrc = [
     "'self'",
     "https://*.supabase.co",
     "wss://*.supabase.co",
     metaUrl,
+    ...localConnect,
     ...extraConnect
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean),
   ].join(" ");
 
+  const scriptSrc =
+    process.env.NODE_ENV === "development"
+      ? `'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval'`
+      : `'self' 'nonce-${nonce}' 'strict-dynamic'`;
+
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    `script-src ${scriptSrc}`,
     `connect-src ${connectSrc}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
@@ -80,12 +103,30 @@ function withSecurityHeaders(
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("x-pathname", request.nextUrl.pathname);
 
+  const rewrite = response.headers.get("x-middleware-rewrite");
   const location = response.headers.get("location");
-  const secured = location
-    ? NextResponse.redirect(new URL(location), response.status)
-    : NextResponse.next({
-        request: { headers: requestHeaders },
-      });
+
+  let secured: NextResponse;
+  if (location) {
+    secured = NextResponse.redirect(
+      new URL(location, request.url),
+      response.status,
+    );
+  } else if (rewrite) {
+    secured = NextResponse.rewrite(new URL(rewrite, request.url), {
+      request: { headers: requestHeaders },
+    });
+  } else if (response.status !== 200 && response.status !== 0) {
+    secured = new NextResponse(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    });
+  } else {
+    secured = NextResponse.next({
+      request: { headers: requestHeaders },
+    });
+  }
 
   for (const cookie of response.cookies?.getAll?.() ?? []) {
     secured.cookies.set(cookie);

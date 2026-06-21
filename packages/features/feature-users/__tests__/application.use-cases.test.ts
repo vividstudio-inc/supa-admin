@@ -9,6 +9,9 @@ const mockFindConnectionById = vi.fn();
 const mockDbDelete = vi.fn();
 const mockDbInsert = vi.fn();
 
+const mockReplaceUserRoles = vi.fn();
+const mockReplaceConnectionMemberships = vi.fn();
+
 vi.mock("@supa-admin/repository-kit", () => ({
   createDbContext: vi.fn(async () => ({
     db: {
@@ -21,6 +24,8 @@ vi.mock("@supa-admin/repository-kit", () => ({
     listProfiles: mockListProfiles,
     findProfileById: mockFindProfileById,
     updateProfile: mockUpdateProfile,
+    replaceUserRoles: mockReplaceUserRoles,
+    replaceConnectionMemberships: mockReplaceConnectionMemberships,
     getUserRoles: vi.fn().mockResolvedValue([]),
     getMemberships: vi.fn().mockResolvedValue([]),
   })),
@@ -118,6 +123,28 @@ describe("feature-users application", () => {
       displayName: "Updated",
       role: undefined,
     });
+  });
+
+  it("updateUser ignores role assignments for platform_admin", async () => {
+    mockFindProfileById.mockResolvedValue({
+      id: "admin-1",
+      role: "platform_admin",
+      email: "admin@test.local",
+    });
+
+    const { updateUser } = await import("../src/application/update-user");
+    const result = await updateUser({
+      id: "admin-1",
+      roleIds: ["role-1"],
+      connectionIds: ["conn-1"],
+    });
+
+    expect(result.ok).toBe(true);
+    expect(mockReplaceUserRoles).toHaveBeenCalledWith("admin-1", []);
+    expect(mockReplaceConnectionMemberships).toHaveBeenCalledWith(
+      "admin-1",
+      [],
+    );
   });
 
   it("provisionTargetUser creates target user and mapping", async () => {

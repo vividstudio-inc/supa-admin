@@ -21,6 +21,10 @@ export async function updateUser(
   try {
     const ctx = await createDbContext({ mode: "service" });
     const users = createUsersRepository(ctx.db);
+    const profile = await users.findProfileById(input.id);
+    if (!profile) {
+      return err(new UsersFeatureError("User not found"));
+    }
 
     if (input.displayName !== undefined || input.role !== undefined) {
       await users.updateProfile(input.id, {
@@ -29,12 +33,19 @@ export async function updateUser(
       });
     }
 
-    if (input.roleIds) {
-      await users.replaceUserRoles(input.id, input.roleIds);
-    }
+    const effectiveRole = input.role ?? profile.role;
 
-    if (input.connectionIds) {
-      await users.replaceConnectionMemberships(input.id, input.connectionIds);
+    if (effectiveRole === "platform_admin") {
+      await users.replaceUserRoles(input.id, []);
+      await users.replaceConnectionMemberships(input.id, []);
+    } else {
+      if (input.roleIds) {
+        await users.replaceUserRoles(input.id, input.roleIds);
+      }
+
+      if (input.connectionIds) {
+        await users.replaceConnectionMemberships(input.id, input.connectionIds);
+      }
     }
 
     return ok({ success: true as const });

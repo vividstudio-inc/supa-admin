@@ -378,7 +378,7 @@ describe("column helpers", () => {
       isDateColumn,
     } = await import("../src/index.js");
     expect(isTextColumn("character varying")).toBe(true);
-    expect(isTextColumn("uuid")).toBe(true);
+    expect(isTextColumn("uuid")).toBe(false);
     expect(isJsonColumn("jsonb")).toBe(true);
     expect(isBooleanColumn("boolean")).toBe(true);
     expect(isNumericColumn("bigint")).toBe(true);

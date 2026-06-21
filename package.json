@@ -19,6 +19,7 @@
     "lint": "biome check",
     "lint:arch": "depcruise packages apps --config .dependency-cruiser.cjs",
     "architecture-check": "tsx scripts/architecture-check.ts",
+    "check:edge-bundle": "tsx scripts/check-edge-bundle.ts",
     "typecheck": "turbo typecheck",
     "db:start": "tsx scripts/db-start.ts",
     "db:start:meta": "tsx scripts/db-start-meta.ts",

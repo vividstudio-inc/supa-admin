@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { DataTableCrud } from "@/components/data-table/data-table-crud";
 import { PageHeader } from "@/components/layout/page-header";
 import { redirect } from "@/i18n/routing";
+import { parseTableEqFilter } from "@/lib/foreign-key/utils";
 import { router } from "@/lib/orpc/router";
 import { getServerCaller } from "@/lib/orpc/server-caller";
 import { canAccessTable } from "@/lib/permissions";
@@ -15,10 +16,13 @@ import type { ColumnMeta } from "@/lib/types/database";
 
 export default async function TablePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; connectionId: string; table: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale, connectionId, table } = await params;
+  const resolvedSearchParams = await searchParams;
   setRequestLocale(locale);
   const t = await getTranslations();
 
@@ -52,13 +56,15 @@ export default async function TablePage({
   );
   if (!tableMeta) notFound();
 
-  const permissions = await getShellTablePermissions(connectionId);
-  const tablePerm = permissions.find((p) => p.table_name === table) ?? {
+  const tablePermissions = await getShellTablePermissions(connectionId);
+  const tablePerm = tablePermissions.find((p) => p.table_name === table) ?? {
     can_read: false,
     can_create: false,
     can_update: false,
     can_delete: false,
   };
+
+  const initialEqFilter = parseTableEqFilter(resolvedSearchParams);
 
   return (
     <div className="space-y-6">
@@ -75,6 +81,14 @@ export default async function TablePage({
         anonKey={anonKey}
         columns={tableMeta.columns as ColumnMeta[]}
         permissions={tablePerm}
+        allTables={tables.map(
+          (row: { table_name: string; columns: ColumnMeta[] }) => ({
+            table_name: row.table_name,
+            columns: row.columns as ColumnMeta[],
+          }),
+        )}
+        tablePermissions={tablePermissions}
+        initialEqFilter={initialEqFilter}
       />
     </div>
   );

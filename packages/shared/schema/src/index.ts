@@ -1,6 +1,9 @@
 import "server-only";
 import type { ColumnMeta } from "@supa-admin/projections";
 import { validateTargetUrl } from "@supa-admin/utils";
+import { parseForeignKeyFromOpenApiDescription } from "./parse-foreign-key";
+
+export { parseForeignKeyFromOpenApiDescription } from "./parse-foreign-key";
 
 function allowLocalTargetUrlsFromEnv() {
   const flag = process.env.ALLOW_LOCAL_TARGET_URLS;
@@ -49,21 +52,30 @@ export async function fetchSchemaViaRest(
     const props =
       (
         def as {
-          properties?: Record<string, { type?: string; format?: string }>;
+          properties?: Record<
+            string,
+            { type?: string; format?: string; description?: string }
+          >;
         }
       ).properties ?? {};
     const required = (def as { required?: string[] }).required ?? [];
 
     tables.push({
       table_name: tableName,
-      columns: Object.entries(props).map(([name, prop]) => ({
-        name,
-        data_type: prop.format ?? prop.type ?? "text",
-        is_nullable: !required.includes(name),
-        column_default: null,
-        is_primary_key: name === "id",
-        is_identity: false,
-      })),
+      columns: Object.entries(props).map(([name, prop]) => {
+        const foreignKey = parseForeignKeyFromOpenApiDescription(
+          prop.description,
+        );
+        return {
+          name,
+          data_type: prop.format ?? prop.type ?? "text",
+          is_nullable: !required.includes(name),
+          column_default: null,
+          is_primary_key: name === "id",
+          is_identity: false,
+          ...(foreignKey ? { foreign_key: foreignKey } : {}),
+        };
+      }),
     });
   }
 

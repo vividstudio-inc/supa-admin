@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { describe, expect, it, vi } from "vitest";
 
 const mockGetUser = vi.fn();
@@ -19,12 +19,20 @@ vi.mock("@supabase/supabase-js", () => ({
   })),
 }));
 
-vi.mock("@supa-admin/rate-limit", () => ({
+vi.mock("@supa-admin/rate-limit/edge", () => ({
   checkRateLimit: vi.fn(async () => ({ allowed: true })),
 }));
 
 vi.mock("next-intl/middleware", () => ({
-  default: vi.fn(() => vi.fn(() => new Response(null, { status: 200 }))),
+  default: vi.fn(() =>
+    vi.fn((request: NextRequest) => {
+      const pathname = new URL(request.url).pathname;
+      if (pathname === "/setup" || pathname === "/login") {
+        return NextResponse.rewrite(new URL(`/ja${pathname}`, request.url));
+      }
+      return NextResponse.next();
+    }),
+  ),
 }));
 
 vi.mock("./lib/env", () => ({
@@ -58,6 +66,24 @@ describe("middleware", () => {
 
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toContain("localhost");
+  });
+
+  it("when unauthenticated on setup, then preserves locale rewrite", async () => {
+    vi.stubEnv("ALLOW_LOCAL_TARGET_URLS", "true");
+    vi.stubEnv("LOCAL_TARGET_SUPABASE_URL", "http://127.0.0.1:54421");
+    mockGetUser.mockResolvedValue({ data: { user: null } });
+
+    const { middleware } = await import("./middleware.js");
+    const request = new NextRequest(new URL("http://localhost/setup"));
+    const response = await middleware(request);
+
+    expect(response.headers.get("x-middleware-rewrite")).toContain("/ja/setup");
+    expect(response.headers.get("Content-Security-Policy")).toContain(
+      "http://127.0.0.1:54421",
+    );
+    expect(response.headers.get("Content-Security-Policy")).toContain(
+      "ws://127.0.0.1:54421",
+    );
   });
 
   it("when setup cookie set, then does not query anon app_settings", async () => {

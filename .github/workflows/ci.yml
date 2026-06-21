@@ -41,6 +41,7 @@ jobs:
       - uses: ./.github/actions/setup-pnpm
       - run: pnpm install --frozen-lockfile
       - run: SKIP_ENV_VALIDATION=true pnpm build
+      - run: pnpm check:edge-bundle
 
   test-unit:
     runs-on: blacksmith-4vcpu-ubuntu-2404

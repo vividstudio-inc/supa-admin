@@ -1,26 +1,15 @@
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis as UpstashRedis } from "@upstash/redis";
-import { createClient, type RedisClientType } from "redis";
+import type { RedisClientType } from "redis";
+import type { RateLimitResult } from "./types";
+import {
+  checkUpstashRateLimit,
+  clearUpstashLimiterCache,
+  isNoOpMode,
+  isProduction,
+} from "./upstash";
 
-export type RateLimitResult = {
-  allowed: boolean;
-  retryAfterSec?: number;
-};
+export type { RateLimitResult } from "./types";
 
 let localClient: RedisClientType | null = null;
-const limiterCache = new Map<string, Ratelimit>();
-
-function isNoOpMode(): boolean {
-  return (
-    process.env.VITEST === "true" ||
-    process.env.SKIP_ENV_VALIDATION === "true" ||
-    process.env.RATE_LIMIT_DISABLED === "true"
-  );
-}
-
-function isProduction(): boolean {
-  return process.env.NODE_ENV === "production";
-}
 
 async function getLocalRedis(): Promise<RedisClientType> {
   if (localClient?.isOpen) return localClient;
@@ -28,34 +17,13 @@ async function getLocalRedis(): Promise<RedisClientType> {
   if (!url) {
     throw new Error("REDIS_URL is required for local rate limiting");
   }
+  const { createClient } = await import("redis");
   localClient = createClient({ url });
   localClient.on("error", () => {
     /* connection errors surface on command */
   });
   await localClient.connect();
   return localClient;
-}
-
-function getUpstashLimiter(limit: number, windowSec: number): Ratelimit {
-  const cacheKey = `upstash:${limit}:${windowSec}`;
-  const cached = limiterCache.get(cacheKey);
-  if (cached) return cached as Ratelimit;
-
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) {
-    throw new Error(
-      "UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required in production",
-    );
-  }
-
-  const limiter = new Ratelimit({
-    redis: new UpstashRedis({ url, token }),
-    limiter: Ratelimit.slidingWindow(limit, `${windowSec} s`),
-    prefix: "sa-rl",
-  });
-  limiterCache.set(cacheKey, limiter);
-  return limiter;
 }
 
 async function checkLocalRateLimit(
@@ -77,7 +45,8 @@ async function checkLocalRateLimit(
 }
 
 /**
- * Sliding-window rate limit. No-op in Vitest / when RATE_LIMIT_DISABLED is set.
+ * Sliding-window rate limit for Node.js runtimes (oRPC, webhooks).
+ * No-op in Vitest / when RATE_LIMIT_DISABLED is set.
  */
 export async function checkRateLimit(
   key: string,
@@ -89,18 +58,7 @@ export async function checkRateLimit(
   }
 
   if (isProduction()) {
-    const limiter = getUpstashLimiter(limit, windowSec);
-    const result = await limiter.limit(key);
-    if (!result.success) {
-      return {
-        allowed: false,
-        retryAfterSec: Math.max(
-          1,
-          Math.ceil((result.reset - Date.now()) / 1000),
-        ),
-      };
-    }
-    return { allowed: true };
+    return checkUpstashRateLimit(key, limit, windowSec);
   }
 
   return checkLocalRateLimit(key, limit, windowSec);
@@ -108,7 +66,7 @@ export async function checkRateLimit(
 
 /** Reset cached clients — test helper. */
 export async function resetRateLimitClients(): Promise<void> {
-  limiterCache.clear();
+  clearUpstashLimiterCache();
   if (localClient?.isOpen) {
     await localClient.quit();
   }

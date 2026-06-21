@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { pathToFileURL } from "node:url";
 
-export type ArchitectureRule = "A1" | "A2" | "A3" | "A4" | "A5";
+export type ArchitectureRule = "A1" | "A2" | "A3" | "A4" | "A5" | "A6";
 
 export interface ArchitectureViolation {
   rule: ArchitectureRule;
@@ -17,7 +17,7 @@ export interface ArchitectureCheckOptions {
   enabledChecks?: ArchitectureRule[];
 }
 
-const DEFAULT_CHECKS: ArchitectureRule[] = ["A1", "A2", "A3", "A4"];
+const DEFAULT_CHECKS: ArchitectureRule[] = ["A1", "A2", "A3", "A4", "A6"];
 
 const RULE_DESCRIPTIONS: Record<ArchitectureRule, string> = {
   A1: "apps/web/app must not call createMetaServerClient, createMetaServiceClient, or Supabase .from() (auth login pages exempt)",
@@ -25,6 +25,7 @@ const RULE_DESCRIPTIONS: Record<ArchitectureRule, string> = {
   A3: "apps/web/components must not import @supa-admin/rls",
   A4: "apps/web may import @supa-admin/repository-kit only from lib/orpc and app/api",
   A5: "supabase/migrations must not contain hand-written SQL (enforced by lefthook at commit time)",
+  A6: "apps/web/middleware.ts must import @supa-admin/rate-limit/edge (not the Node redis entry)",
 };
 
 function collectFiles(
@@ -216,6 +217,54 @@ export function checkA5(rootDir: string): ArchitectureViolation[] {
   return violations;
 }
 
+export function checkA6(rootDir: string): ArchitectureViolation[] {
+  const middlewarePath = join(rootDir, "apps/web/middleware.ts");
+  if (!statSync(middlewarePath, { throwIfNoEntry: false })?.isFile()) {
+    return [];
+  }
+
+  const content = readFileSync(middlewarePath, "utf8");
+  const violations: ArchitectureViolation[] = [];
+  const lines = content.split("\n");
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index] ?? "";
+    if (/from\s+["']@supa-admin\/rate-limit["']/.test(line)) {
+      violations.push({
+        rule: "A6",
+        file: relative(rootDir, middlewarePath),
+        line: index + 1,
+        snippet: line.trim(),
+        message: RULE_DESCRIPTIONS.A6,
+      });
+    }
+  }
+
+  const edgeEntryPath = join(rootDir, "packages/shared/rate-limit/src/edge.ts");
+  if (statSync(edgeEntryPath, { throwIfNoEntry: false })?.isFile()) {
+    const edgeContent = readFileSync(edgeEntryPath, "utf8");
+    const edgeLines = edgeContent.split("\n");
+    for (let index = 0; index < edgeLines.length; index += 1) {
+      const line = edgeLines[index] ?? "";
+      if (
+        /from\s+["']redis["']/.test(line) ||
+        /import\s*\(\s*["']redis["']\s*\)/.test(line)
+      ) {
+        violations.push({
+          rule: "A6",
+          file: relative(rootDir, edgeEntryPath),
+          line: index + 1,
+          snippet: line.trim(),
+          message:
+            "packages/shared/rate-limit/src/edge.ts must not import the Node redis package",
+        });
+      }
+    }
+  }
+
+  return violations;
+}
+
 export function runArchitectureChecks(
   options: ArchitectureCheckOptions = {},
 ): ArchitectureViolation[] {
@@ -238,13 +287,16 @@ export function runArchitectureChecks(
   if (enabledChecks.includes("A5")) {
     violations.push(...checkA5(rootDir));
   }
+  if (enabledChecks.includes("A6")) {
+    violations.push(...checkA6(rootDir));
+  }
 
   return violations;
 }
 
 export function formatViolations(violations: ArchitectureViolation[]): string {
   if (violations.length === 0) {
-    return "Architecture check passed (A1-A4; A5 skipped — lefthook handles migrations at commit time).";
+    return "Architecture check passed (A1-A4, A6; A5 skipped — lefthook handles migrations at commit time).";
   }
 
   return violations

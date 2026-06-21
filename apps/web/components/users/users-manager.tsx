@@ -2,9 +2,11 @@
 
 import type { Connection, Profile, Role } from "@supa-admin/projections";
 import { aggregateRolePermissions } from "@supa-admin/projections";
+import { TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -223,7 +225,7 @@ export function UsersManager() {
   }
 
   async function saveEdit() {
-    if (!editUser) return;
+    if (!editUser || editUser.role === "platform_admin") return;
     try {
       await orpcBrowser.users.update({
         id: editUser.id,
@@ -361,7 +363,7 @@ export function UsersManager() {
         open={editUser != null}
         onOpenChange={(next) => !next && setEditUser(null)}
       >
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-auto">
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editUser?.display_name ?? editUser?.email}
@@ -369,127 +371,147 @@ export function UsersManager() {
           </DialogHeader>
           {editUser && (
             <div className="space-y-6">
-              <div className="space-y-2">
-                <Label>{t("assignRoles")}</Label>
-                <div className="flex flex-wrap gap-2">
-                  {roles.map((r) => (
-                    <Button
-                      key={r.id}
-                      size="sm"
-                      variant={
-                        editRoleIds.includes(r.id) ? "default" : "outline"
-                      }
-                      onClick={() =>
-                        setEditRoleIds((prev) => toggleId(prev, r.id))
-                      }
-                    >
-                      {r.name}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>{t("memberships")}</Label>
-                <div className="flex flex-wrap gap-2">
-                  {connections.map((c) => (
-                    <Button
-                      key={c.id}
-                      size="sm"
-                      variant={
-                        editConnectionIds.includes(c.id) ? "default" : "outline"
-                      }
-                      onClick={() =>
-                        setEditConnectionIds((prev) => toggleId(prev, c.id))
-                      }
-                    >
-                      {c.name}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-              <Button onClick={saveEdit}>{tCommon("save")}</Button>
-
-              <div className="space-y-3 border-t pt-4">
-                <Label>{t("overrides")}</Label>
-                <Select
-                  items={overrideConnectionItems}
-                  value={overrideConnectionId}
-                  onValueChange={(v) => setOverrideConnectionId(v ?? "")}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("selectConnection")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {connections
-                      .filter((c) => editConnectionIds.includes(c.id))
-                      .map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
+              {editUser.role === "platform_admin" ? (
+                <Alert className="border-warning/40 bg-warning/10 text-warning-foreground">
+                  <TriangleAlert />
+                  <AlertDescription className="text-warning-foreground">
+                    {t("adminRbacHint")}
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <Label>{t("assignRoles")}</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {roles.map((r) => (
+                        <Button
+                          key={r.id}
+                          size="sm"
+                          variant={
+                            editRoleIds.includes(r.id) ? "default" : "outline"
+                          }
+                          onClick={() =>
+                            setEditRoleIds((prev) => toggleId(prev, r.id))
+                          }
+                        >
+                          {r.name}
+                        </Button>
                       ))}
-                  </SelectContent>
-                </Select>
-                {overrideConnectionId && overrideTables.length > 0 ? (
-                  <>
-                    <p className="text-sm text-muted-foreground">
-                      {t("overrideHint")}
-                    </p>
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/30 hover:bg-muted/30">
-                          <TableHead>{tRoles("tableName")}</TableHead>
-                          {PERM_FIELDS.map((field) => (
-                            <TableHead key={field}>
-                              {tRoles(
-                                field === "can_read"
-                                  ? "canRead"
-                                  : field === "can_create"
-                                    ? "canCreate"
-                                    : field === "can_update"
-                                      ? "canUpdate"
-                                      : "canDelete",
-                              )}
-                            </TableHead>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("memberships")}</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {connections.map((c) => (
+                        <Button
+                          key={c.id}
+                          size="sm"
+                          variant={
+                            editConnectionIds.includes(c.id)
+                              ? "default"
+                              : "outline"
+                          }
+                          onClick={() =>
+                            setEditConnectionIds((prev) => toggleId(prev, c.id))
+                          }
+                        >
+                          {c.name}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  <Button onClick={saveEdit}>{tCommon("save")}</Button>
+
+                  <div className="space-y-3 border-t pt-4">
+                    <Label>{t("overrides")}</Label>
+                    <Select
+                      items={overrideConnectionItems}
+                      value={overrideConnectionId}
+                      onValueChange={(v) => setOverrideConnectionId(v ?? "")}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("selectConnection")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {connections
+                          .filter((c) => editConnectionIds.includes(c.id))
+                          .map((c) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.name}
+                            </SelectItem>
                           ))}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {overrideTables.map((tableName) => (
-                          <TableRow key={tableName}>
-                            <TableCell>{tableName}</TableCell>
-                            {PERM_FIELDS.map((field) => {
-                              const value =
-                                overrides[tableName]?.[field] ?? null;
-                              const inherited =
-                                roleBaseline[tableName]?.[field] ?? false;
-                              return (
-                                <TableCell key={field}>
-                                  <Button
-                                    size="sm"
-                                    variant={
-                                      value === null ? "outline" : "secondary"
-                                    }
-                                    onClick={() =>
-                                      toggleOverride(tableName, field)
-                                    }
-                                  >
-                                    {overrideCellLabel(
-                                      value,
-                                      inherited,
-                                      t("inherit"),
+                      </SelectContent>
+                    </Select>
+                    {overrideConnectionId && overrideTables.length > 0 ? (
+                      <>
+                        <p className="text-sm text-muted-foreground">
+                          {t("overrideHint")}
+                        </p>
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="bg-muted/30 hover:bg-muted/30">
+                                <TableHead>{tRoles("tableName")}</TableHead>
+                                {PERM_FIELDS.map((field) => (
+                                  <TableHead key={field}>
+                                    {tRoles(
+                                      field === "can_read"
+                                        ? "canRead"
+                                        : field === "can_create"
+                                          ? "canCreate"
+                                          : field === "can_update"
+                                            ? "canUpdate"
+                                            : "canDelete",
                                     )}
-                                  </Button>
-                                </TableCell>
-                              );
-                            })}
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                    <Button onClick={saveOverrides}>{tCommon("save")}</Button>
-                  </>
-                ) : null}
-              </div>
+                                  </TableHead>
+                                ))}
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {overrideTables.map((tableName) => (
+                                <TableRow key={tableName}>
+                                  <TableCell>{tableName}</TableCell>
+                                  {PERM_FIELDS.map((field) => {
+                                    const value =
+                                      overrides[tableName]?.[field] ?? null;
+                                    const inherited =
+                                      roleBaseline[tableName]?.[field] ?? false;
+                                    return (
+                                      <TableCell key={field} className="p-1">
+                                        <Button
+                                          size="sm"
+                                          className="h-8 min-w-[4.5rem] px-2 text-xs whitespace-nowrap"
+                                          variant={
+                                            value === null
+                                              ? "outline"
+                                              : "secondary"
+                                          }
+                                          onClick={() =>
+                                            toggleOverride(tableName, field)
+                                          }
+                                        >
+                                          {overrideCellLabel(
+                                            value,
+                                            inherited,
+                                            t("inherit"),
+                                          )}
+                                        </Button>
+                                      </TableCell>
+                                    );
+                                  })}
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                        <Button onClick={saveOverrides}>
+                          {tCommon("save")}
+                        </Button>
+                      </>
+                    ) : null}
+                  </div>
+                </>
+              )}
 
               <div className="space-y-3 border-t pt-4">
                 <Label>{t("provision")}</Label>

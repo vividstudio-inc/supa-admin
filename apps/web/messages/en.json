@@ -156,7 +156,15 @@
     "page": "Page",
     "of": "of",
     "rows": "rows",
-    "next": "Next"
+    "next": "Next",
+    "selectForeignRow": "Select a record from {table}",
+    "selectForeignRowShort": "Select",
+    "foreignKeyPreview": "Referenced row in {table}",
+    "viewDetail": "View detail",
+    "foreignKeyNoAccess": "You do not have read access to the referenced table. Enter a UUID manually.",
+    "resyncSchemaForFkTitle": "Foreign key metadata is outdated",
+    "resyncSchemaForFk": "Run schema sync on this connection to enable foreign key pickers and links.",
+    "filteredByColumn": "Filtered by {column} = {value}"
   },
   "users": {
     "title": "User management",
@@ -172,7 +180,8 @@
     "provision": "Provision target user",
     "overrides": "Permission overrides",
     "inherit": "Inherit",
-    "overrideHint": "Click to cycle inherit → allow → deny"
+    "overrideHint": "Click to cycle inherit → allow → deny",
+    "adminRbacHint": "Platform admins have full access to every connection and table. Role assignment, connection access, and permission overrides do not apply."
   },
   "roles": {
     "title": "Role management",
