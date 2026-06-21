@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/patterns/loading-button";
 import {
   Card,
   CardContent,
@@ -86,7 +86,7 @@ export function ConnectForm({ connectionId, url, anonKey }: ConnectFormProps) {
   }
 
   return (
-    <Card className="max-w-md">
+    <Card className="border-border/60 shadow-sm">
       <CardHeader>
         <CardTitle>{t("title")}</CardTitle>
         <CardDescription>{t("description")}</CardDescription>
@@ -113,9 +113,13 @@ export function ConnectForm({ connectionId, url, anonKey }: ConnectFormProps) {
               required
             />
           </div>
-          <Button type="submit" disabled={loading}>
-            {loading ? "..." : t("connect")}
-          </Button>
+          <LoadingButton
+            type="submit"
+            loading={loading}
+            loadingText={t("connect")}
+          >
+            {t("connect")}
+          </LoadingButton>
         </form>
       </CardContent>
     </Card>

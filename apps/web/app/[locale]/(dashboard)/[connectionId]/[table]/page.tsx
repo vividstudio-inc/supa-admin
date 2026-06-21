@@ -1,16 +1,12 @@
 import { getConnectionAnonKey } from "@supa-admin/auth/connection-keys";
 import { notFound } from "next/navigation";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { DataTableCrud } from "@/components/data-table/data-table-crud";
-import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { PageHeader } from "@/components/layout/page-header";
 import { redirect } from "@/i18n/routing";
 import { getConnectionBootstrapStatus } from "@/lib/connection-bootstrap";
-import {
-  canAccessTable,
-  getCurrentProfile,
-  getUserConnectionIds,
-  resolveUserPermissions,
-} from "@/lib/permissions";
+import { canAccessTable } from "@/lib/permissions";
+import { getShellProfile, getShellTablePermissions } from "@/lib/shell-data";
 import { createMetaServerClient } from "@/lib/supabase/meta/server";
 import type { ColumnMeta } from "@/lib/types/database";
 
@@ -21,12 +17,10 @@ export default async function TablePage({
 }) {
   const { locale, connectionId, table } = await params;
   setRequestLocale(locale);
+  const t = await getTranslations();
 
-  const profile = await getCurrentProfile();
+  const profile = await getShellProfile();
   if (!profile) return null;
-
-  const allowedIds = await getUserConnectionIds(profile.id, profile.role);
-  if (!allowedIds.includes(connectionId)) notFound();
 
   const bootstrapStatus = await getConnectionBootstrapStatus(connectionId);
   if (bootstrapStatus !== "ready") {
@@ -65,11 +59,7 @@ export default async function TablePage({
 
   if (!tableMeta) notFound();
 
-  const permissions = await resolveUserPermissions(
-    profile.id,
-    connectionId,
-    profile.role,
-  );
+  const permissions = await getShellTablePermissions(connectionId);
   const tablePerm = permissions.find((p) => p.table_name === table) ?? {
     can_read: true,
     can_create: profile.role === "platform_admin",
@@ -77,28 +67,22 @@ export default async function TablePage({
     can_delete: profile.role === "platform_admin",
   };
 
-  const { data: connections } = await supabase
-    .from(connectionSource)
-    .select("id, name");
-
   return (
-    <DashboardShell
-      profile={profile}
-      connections={connections ?? []}
-      activeConnectionId={connectionId}
-      tablePermissions={permissions}
-    >
-      <div className="space-y-4">
-        <h1 className="text-2xl font-bold">{table}</h1>
-        <DataTableCrud
-          connectionId={connectionId}
-          tableName={table}
-          url={connection.url}
-          anonKey={anonKey}
-          columns={tableMeta.columns as ColumnMeta[]}
-          permissions={tablePerm}
-        />
-      </div>
-    </DashboardShell>
+    <div className="space-y-6">
+      <PageHeader
+        title={table}
+        description={t("table.pageDescription", {
+          connection: connection.name,
+        })}
+      />
+      <DataTableCrud
+        connectionId={connectionId}
+        tableName={table}
+        url={connection.url}
+        anonKey={anonKey}
+        columns={tableMeta.columns as ColumnMeta[]}
+        permissions={tablePerm}
+      />
+    </div>
   );
 }

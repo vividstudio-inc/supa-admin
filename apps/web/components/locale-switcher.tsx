@@ -17,6 +17,7 @@ export function LocaleSwitcher() {
 
   return (
     <Select
+      items={{ ja: "日本語", en: "English" }}
       value={locale}
       onValueChange={(next) =>
         next && router.replace(pathname, { locale: next as "ja" | "en" })

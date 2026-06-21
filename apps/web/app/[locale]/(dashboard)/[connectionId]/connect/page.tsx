@@ -1,15 +1,11 @@
 import { getConnectionAnonKey } from "@supa-admin/auth/connection-keys";
 import { notFound } from "next/navigation";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ConnectForm } from "@/components/connect/connect-form";
-import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { PageHeader } from "@/components/layout/page-header";
 import { redirect } from "@/i18n/routing";
 import { getConnectionBootstrapStatus } from "@/lib/connection-bootstrap";
-import {
-  getCurrentProfile,
-  getUserConnectionIds,
-  resolveUserPermissions,
-} from "@/lib/permissions";
+import { getShellProfile } from "@/lib/shell-data";
 import { createMetaServerClient } from "@/lib/supabase/meta/server";
 
 export default async function ConnectPage({
@@ -19,12 +15,10 @@ export default async function ConnectPage({
 }) {
   const { locale, connectionId } = await params;
   setRequestLocale(locale);
+  const t = await getTranslations("connect");
 
-  const profile = await getCurrentProfile();
+  const profile = await getShellProfile();
   if (!profile) return null;
-
-  const allowedIds = await getUserConnectionIds(profile.id, profile.role);
-  if (!allowedIds.includes(connectionId)) notFound();
 
   const bootstrapStatus = await getConnectionBootstrapStatus(connectionId);
   if (bootstrapStatus !== "ready") {
@@ -45,27 +39,14 @@ export default async function ConnectPage({
   const anonKey = await getConnectionAnonKey(connectionId, profile.id);
   if (!anonKey) notFound();
 
-  const { data: connections } = await supabase
-    .from(connectionSource)
-    .select("id, name");
-  const permissions = await resolveUserPermissions(
-    profile.id,
-    connectionId,
-    profile.role,
-  );
-
   return (
-    <DashboardShell
-      profile={profile}
-      connections={connections ?? []}
-      activeConnectionId={connectionId}
-      tablePermissions={permissions}
-    >
+    <div className="mx-auto max-w-lg space-y-6">
+      <PageHeader title={t("title")} description={connection.name} />
       <ConnectForm
         connectionId={connectionId}
         url={connection.url}
         anonKey={anonKey}
       />
-    </DashboardShell>
+    </div>
   );
 }

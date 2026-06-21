@@ -2,14 +2,11 @@ import { getConnectionOnboardingStatus } from "@supa-admin/rls";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ConnectionOnboardingWizard } from "@/components/connections/connection-onboarding-wizard";
-import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { PageHeader } from "@/components/layout/page-header";
 import { redirect } from "@/i18n/routing";
 import { getConnectionBootstrapStatus } from "@/lib/connection-bootstrap";
-import {
-  getCurrentProfile,
-  getUserConnectionIds,
-  requirePlatformAdmin,
-} from "@/lib/permissions";
+import { requirePlatformAdmin } from "@/lib/permissions";
+import { getShellProfile } from "@/lib/shell-data";
 import { createMetaServerClient } from "@/lib/supabase/meta/server";
 
 export default async function TargetSetupPage({
@@ -20,11 +17,8 @@ export default async function TargetSetupPage({
   const { locale, connectionId } = await params;
   setRequestLocale(locale);
 
-  const profile = await getCurrentProfile();
+  const profile = await getShellProfile();
   if (!profile) return null;
-
-  const allowedIds = await getUserConnectionIds(profile.id, profile.role);
-  if (!allowedIds.includes(connectionId)) notFound();
 
   const bootstrapStatus = await getConnectionBootstrapStatus(connectionId);
   const t = await getTranslations();
@@ -40,10 +34,6 @@ export default async function TargetSetupPage({
 
   if (!connection) notFound();
 
-  const { data: connections } = await supabase
-    .from(connectionSource)
-    .select("id, name");
-
   let isAdmin = false;
   try {
     await requirePlatformAdmin();
@@ -54,25 +44,17 @@ export default async function TargetSetupPage({
 
   if (bootstrapStatus !== "ready" && !isAdmin) {
     return (
-      <DashboardShell
-        profile={profile}
-        connections={connections ?? []}
-        activeConnectionId={connectionId}
-      >
-        <div className="space-y-4 max-w-3xl">
-          <h1 className="text-2xl font-bold">
-            {t("connections.bootstrap.title")}
-          </h1>
-          <p className="text-muted-foreground">
-            {t("connections.bootstrap.blockedDescription", {
-              name: connection.name,
-            })}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {t("connections.bootstrap.contactAdmin")}
-          </p>
-        </div>
-      </DashboardShell>
+      <div className="mx-auto max-w-3xl space-y-6">
+        <PageHeader
+          title={t("connections.bootstrap.title")}
+          description={t("connections.bootstrap.blockedDescription", {
+            name: connection.name,
+          })}
+        />
+        <p className="text-sm text-muted-foreground">
+          {t("connections.bootstrap.contactAdmin")}
+        </p>
+      </div>
     );
   }
 
@@ -90,17 +72,19 @@ export default async function TargetSetupPage({
   const onboarding = await getConnectionOnboardingStatus(connectionId);
 
   return (
-    <DashboardShell
-      profile={profile}
-      connections={connections ?? []}
-      activeConnectionId={connectionId}
-    >
+    <div className="space-y-6">
+      <PageHeader
+        title={t("connections.onboarding.title")}
+        description={t("connections.onboarding.description", {
+          name: connection.name,
+        })}
+      />
       <ConnectionOnboardingWizard
         connectionId={connectionId}
         connectionName={connection.name}
         steps={onboarding.steps}
         showBootstrap={bootstrapStatus !== "ready"}
       />
-    </DashboardShell>
+    </div>
   );
 }

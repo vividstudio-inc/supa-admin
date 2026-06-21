@@ -37,6 +37,9 @@ vi.mock("@/lib/orpc/client.browser", () => ({
 const messages = {
   connections: {
     add: "Add connection",
+    formDescription: "Form description",
+    sectionBasic: "Basic",
+    sectionCredentials: "Credentials",
     grantHint: "Grant hint",
     name: "Name",
     url: "URL",
@@ -44,6 +47,7 @@ const messages = {
     serviceRoleKey: "Service role key",
     testConnection: "Create",
     schemaSynced: "Synced {count} tables",
+    bootstrap: { setupRequired: "Setup required" },
   },
 };
 

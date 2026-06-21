@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/patterns/loading-button";
 import {
   Card,
   CardContent,
@@ -43,7 +43,7 @@ export function LoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full max-w-md border-border/60 shadow-lg">
       <CardHeader>
         <CardTitle>{t("loginTitle")}</CardTitle>
         <CardDescription>{t("loginDescription")}</CardDescription>
@@ -70,9 +70,14 @@ export function LoginForm() {
               required
             />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "..." : t("login")}
-          </Button>
+          <LoadingButton
+            type="submit"
+            className="w-full"
+            loading={loading}
+            loadingText={t("login")}
+          >
+            {t("login")}
+          </LoadingButton>
         </form>
       </CardContent>
     </Card>

@@ -16,6 +16,16 @@
     "success": "Success",
     "error": "An error occurred"
   },
+  "theme": {
+    "toggle": "Toggle theme",
+    "dark": "Dark",
+    "light": "Light"
+  },
+  "authLayout": {
+    "tagline": "Manage Supabase connections in one place",
+    "description": "Control users and RBAC in Meta DB, then bridge securely to Target projects.",
+    "footer": "SupaAdmin — Admin Console"
+  },
   "auth": {
     "login": "Log in",
     "logout": "Log out",
@@ -34,11 +44,21 @@
     "complete": "Setup complete"
   },
   "nav": {
+    "main": "Main",
     "dashboard": "Dashboard",
     "connections": "Connections",
     "users": "Users",
     "roles": "Roles",
     "settings": "Settings"
+  },
+  "dashboard": {
+    "welcome": "Welcome, {name}",
+    "subtitle": "Overview of connections and users",
+    "connectionsHint": "Accessible connections",
+    "usersHint": "Registered users",
+    "rolesHint": "Defined roles",
+    "noConnectionsTitle": "No connections yet",
+    "noConnectionsDescription": "Add your first Supabase connection to get started."
   },
   "connections": {
     "title": "Connections",
@@ -55,6 +75,12 @@
     "grantHint": "If tables are missing, check GRANT on the target database",
     "lastSynced": "Last synced",
     "status": "Status",
+    "listDescription": "Manage registered Target Supabase connections",
+    "formDescription": "Enter the Target project URL and API keys",
+    "sectionBasic": "Basic info",
+    "sectionCredentials": "Credentials",
+    "emptyTitle": "No connections",
+    "emptyDescription": "Add a connection to start managing Target projects",
     "bootstrap": {
       "title": "Target setup",
       "description": "Install SupaAdmin helper functions on the Target Supabase project once. Run the SQL in the SQL Editor, then click Verify.",
@@ -85,6 +111,17 @@
       "openConnect": "Test connect"
     }
   },
+  "connectionTables": {
+    "title": "Tables",
+    "description": "Tables you can read in this connection",
+    "emptyTitle": "No accessible tables",
+    "emptyDescription": "Check role permissions or connect to the Target project.",
+    "openConnect": "Connect to Target",
+    "openTable": "Open",
+    "permissions": "Permissions",
+    "action": "Action",
+    "adminHint": "You may need to connect to Target (JWT sync) before using CRUD."
+  },
   "connect": {
     "title": "Connect to target",
     "description": "Enter credentials for the target Supabase project",
@@ -99,6 +136,9 @@
   },
   "table": {
     "noData": "No data",
+    "noResults": "No rows match your search",
+    "emptyDescription": "Create the first row or adjust your search filters",
+    "pageDescription": "Connection: {connection}",
     "createRow": "Create row",
     "editRow": "Edit row",
     "deleteRow": "Delete row",
@@ -107,10 +147,12 @@
     "sortDesc": "Descending",
     "page": "Page",
     "of": "of",
-    "rows": "rows"
+    "rows": "rows",
+    "next": "Next"
   },
   "users": {
     "title": "User management",
+    "pageDescription": "Manage platform users and connection access",
     "add": "Add user",
     "displayName": "Display name",
     "role": "Role",
@@ -124,9 +166,12 @@
   },
   "roles": {
     "title": "Role management",
+    "pageDescription": "Configure roles and table permission matrices",
     "add": "Add role",
     "name": "Role name",
     "description": "Description",
+    "connection": "Connection",
+    "tableName": "Table",
     "permissions": "Permission matrix",
     "canRead": "Read",
     "canCreate": "Create",

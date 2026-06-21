@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { LoadingButton } from "@/components/patterns/loading-button";
 import {
   Card,
   CardContent,
@@ -19,6 +19,7 @@ import { orpcBrowser } from "@/lib/orpc/client.browser";
 export function SetupForm() {
   const t = useTranslations("setup");
   const tAuth = useTranslations("auth");
+  const tCommon = useTranslations("common");
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,12 +44,12 @@ export function SetupForm() {
       router.refresh();
     } catch (err) {
       setLoading(false);
-      toast.error(err instanceof Error ? err.message : "Error");
+      toast.error(err instanceof Error ? err.message : tCommon("error"));
     }
   }
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full max-w-md border-border/60 shadow-lg">
       <CardHeader>
         <CardTitle>{t("title")}</CardTitle>
         <CardDescription>{t("description")}</CardDescription>
@@ -97,9 +98,14 @@ export function SetupForm() {
               autoComplete="off"
             />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "..." : t("createAdmin")}
-          </Button>
+          <LoadingButton
+            type="submit"
+            className="w-full"
+            loading={loading}
+            loadingText={t("createAdmin")}
+          >
+            {t("createAdmin")}
+          </LoadingButton>
         </form>
       </CardContent>
     </Card>

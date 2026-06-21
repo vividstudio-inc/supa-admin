@@ -210,6 +210,15 @@ export const rolesContract = oc.router({
       }),
     )
     .output(z.object({ role })),
+  getPermissions: oc
+    .route({ method: "GET", path: "/roles/permissions" })
+    .input(
+      z.object({
+        roleId: z.string().uuid(),
+        connectionId: z.string().uuid(),
+      }),
+    )
+    .output(z.object({ permissions: z.array(tablePermission) })),
   updatePermissions: oc
     .route({ method: "PUT", path: "/roles/permissions" })
     .input(

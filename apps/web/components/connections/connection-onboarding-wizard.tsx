@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Link } from "@/i18n/routing";
 import { orpcBrowser } from "@/lib/orpc/client.browser";
+import { cn } from "@/lib/utils";
 
 type OnboardingSteps = {
   bootstrap: boolean;
@@ -29,25 +30,42 @@ type ConnectionOnboardingWizardProps = {
 };
 
 function StepRow({
+  step,
   done,
   label,
   action,
 }: {
+  step: number;
   done: boolean;
   label: string;
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-3 py-2">
-      {done ? (
-        <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
-      ) : (
-        <Circle className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-      )}
+    <div className="flex items-start gap-3 rounded-lg border border-border/50 p-4">
+      <div
+        className={cn(
+          "flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-medium",
+          done ? "bg-brand/15 text-brand" : "bg-muted text-muted-foreground",
+        )}
+      >
+        {step}
+      </div>
       <div className="flex-1 space-y-2">
-        <p className={done ? "text-muted-foreground line-through" : ""}>
-          {label}
-        </p>
+        <div className="flex items-center gap-2">
+          {done ? (
+            <CheckCircle2 className="size-4 text-brand shrink-0" />
+          ) : (
+            <Circle className="size-4 text-muted-foreground shrink-0" />
+          )}
+          <p
+            className={cn(
+              "font-medium",
+              done && "text-muted-foreground line-through",
+            )}
+          >
+            {label}
+          </p>
+        </div>
         {!done && action}
       </div>
     </div>
@@ -56,7 +74,7 @@ function StepRow({
 
 export function ConnectionOnboardingWizard({
   connectionId,
-  connectionName,
+  connectionName: _connectionName,
   steps,
   showBootstrap,
 }: ConnectionOnboardingWizardProps) {
@@ -68,81 +86,69 @@ export function ConnectionOnboardingWizard({
   }
 
   return (
-    <div className="space-y-6 max-w-3xl">
-      <div>
-        <h1 className="text-2xl font-bold">{t("title")}</h1>
-        <p className="text-muted-foreground mt-1">
-          {t("description", { name: connectionName })}
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("checklist")}</CardTitle>
-          <CardDescription>{t("checklistHint")}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-1">
-          <StepRow
-            done={steps.bootstrap}
-            label={t("stepBootstrap")}
-            action={
-              showBootstrap ? (
-                <TargetSetupPanel connectionId={connectionId} />
-              ) : undefined
-            }
-          />
-          <StepRow
-            done={steps.schemaSynced}
-            label={t("stepSchema")}
-            action={
-              <Button size="sm" variant="outline" onClick={() => syncSchema()}>
-                {t("syncSchema")}
-              </Button>
-            }
-          />
-          <StepRow
-            done={steps.rolesConfigured}
-            label={t("stepRoles")}
-            action={
+    <Card className="max-w-3xl border-border/60">
+      <CardHeader>
+        <CardTitle>{t("checklist")}</CardTitle>
+        <CardDescription>{t("checklistHint")}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <StepRow
+          step={1}
+          done={steps.bootstrap}
+          label={t("stepBootstrap")}
+          action={
+            showBootstrap ? (
+              <TargetSetupPanel connectionId={connectionId} />
+            ) : undefined
+          }
+        />
+        <StepRow
+          step={2}
+          done={steps.schemaSynced}
+          label={t("stepSchema")}
+          action={
+            <Button size="sm" variant="outline" onClick={() => syncSchema()}>
+              {t("syncSchema")}
+            </Button>
+          }
+        />
+        <StepRow
+          step={3}
+          done={steps.rolesConfigured}
+          label={t("stepRoles")}
+          action={
+            <Button size="sm" variant="outline" render={<Link href="/roles" />}>
+              {t("openRoles")}
+            </Button>
+          }
+        />
+        <StepRow
+          step={4}
+          done={steps.usersProvisioned}
+          label={t("stepProvision")}
+          action={
+            <Button size="sm" variant="outline" render={<Link href="/users" />}>
+              {t("openUsers")}
+            </Button>
+          }
+        />
+        <StepRow
+          step={5}
+          done={steps.bootstrap && steps.rolesConfigured}
+          label={t("stepConnect")}
+          action={
+            steps.bootstrap ? (
               <Button
                 size="sm"
                 variant="outline"
-                render={<Link href="/roles" />}
+                render={<Link href={`/${connectionId}/connect`} />}
               >
-                {t("openRoles")}
+                {t("openConnect")}
               </Button>
-            }
-          />
-          <StepRow
-            done={steps.usersProvisioned}
-            label={t("stepProvision")}
-            action={
-              <Button
-                size="sm"
-                variant="outline"
-                render={<Link href="/users" />}
-              >
-                {t("openUsers")}
-              </Button>
-            }
-          />
-          <StepRow
-            done={steps.bootstrap && steps.rolesConfigured}
-            label={t("stepConnect")}
-            action={
-              steps.bootstrap ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  render={<Link href={`/${connectionId}/connect`} />}
-                >
-                  {t("openConnect")}
-                </Button>
-              ) : undefined
-            }
-          />
-        </CardContent>
-      </Card>
-    </div>
+            ) : undefined
+          }
+        />
+      </CardContent>
+    </Card>
   );
 }

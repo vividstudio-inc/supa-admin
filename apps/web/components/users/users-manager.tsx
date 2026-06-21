@@ -2,7 +2,7 @@
 
 import type { Connection, Profile, Role } from "@supa-admin/projections";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -57,6 +57,18 @@ export function UsersManager() {
   const [provisionConnectionId, setProvisionConnectionId] = useState("");
   const [provisionEmail, setProvisionEmail] = useState("");
   const [provisionPassword, setProvisionPassword] = useState("");
+
+  const platformRoleItems = useMemo(
+    () => ({
+      platform_admin: t("platformAdmin"),
+      member: t("member"),
+    }),
+    [t],
+  );
+  const connectionItems = useMemo(
+    () => Object.fromEntries(connections.map((c) => [c.id, c.name])),
+    [connections],
+  );
 
   useEffect(() => {
     void loadUsers();
@@ -167,6 +179,7 @@ export function UsersManager() {
             <div className="space-y-2">
               <Label>{t("role")}</Label>
               <Select
+                items={platformRoleItems}
                 value={role}
                 onValueChange={(v) =>
                   setRole((v ?? "member") as "platform_admin" | "member")
@@ -243,6 +256,7 @@ export function UsersManager() {
               <div className="space-y-3 border-t pt-4">
                 <Label>{t("provision")}</Label>
                 <Select
+                  items={connectionItems}
                   value={provisionConnectionId}
                   onValueChange={(v) => setProvisionConnectionId(v ?? "")}
                 >

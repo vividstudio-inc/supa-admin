@@ -159,6 +159,40 @@ describe("rolesHandlers", () => {
       roles: [{ id: TEST_IDS.role, name: "Editor", description: null }],
     });
   });
+
+  it("when getPermissions called, then returns role permissions", async () => {
+    mockServerFrom.mockReturnValue(
+      mockSupabaseQuery({
+        data: [
+          {
+            table_name: "posts",
+            can_read: true,
+            can_create: false,
+            can_update: false,
+            can_delete: false,
+          },
+        ],
+        error: null,
+      }),
+    );
+    const { rolesHandlers } = await import("../handlers/index.js");
+    const result = await callWithInput(
+      rolesHandlers.getPermissions,
+      { roleId: TEST_IDS.role, connectionId: TEST_IDS.connection },
+      { context: adminCtx },
+    );
+    expect(result).toEqual({
+      permissions: [
+        {
+          table_name: "posts",
+          can_read: true,
+          can_create: false,
+          can_update: false,
+          can_delete: false,
+        },
+      ],
+    });
+  });
 });
 
 describe("usersHandlers", () => {

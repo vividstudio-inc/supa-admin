@@ -1,9 +1,12 @@
 "use client";
 
 import type { BootstrapStatus } from "@supa-admin/projections";
+import { Plug } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/patterns/empty-state";
+import { StatusBadge } from "@/components/patterns/status-badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +18,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,6 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -49,10 +52,20 @@ type ConnectionListProps = {
 
 export function ConnectionList({ connections }: ConnectionListProps) {
   const t = useTranslations();
+  const [filter, setFilter] = useState("");
   const [rlsSql, setRlsSql] = useState("");
   const [rlsOpen, setRlsOpen] = useState(false);
   const [setupOpen, setSetupOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+
+  const filtered = useMemo(() => {
+    const q = filter.trim().toLowerCase();
+    if (!q) return connections;
+    return connections.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) || c.url.toLowerCase().includes(q),
+    );
+  }, [connections, filter]);
 
   async function syncSchema(id: string) {
     try {
@@ -99,94 +112,124 @@ export function ConnectionList({ connections }: ConnectionListProps) {
     setSetupOpen(true);
   }
 
+  if (connections.length === 0) {
+    return (
+      <EmptyState
+        icon={Plug}
+        title={t("connections.emptyTitle")}
+        description={t("connections.emptyDescription")}
+      />
+    );
+  }
+
   return (
     <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{t("connections.name")}</TableHead>
-            <TableHead>{t("connections.url")}</TableHead>
-            <TableHead>{t("connections.status")}</TableHead>
-            <TableHead>{t("connections.lastSynced")}</TableHead>
-            <TableHead>{t("common.actions")}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {connections.map((conn) => (
-            <TableRow key={conn.id}>
-              <TableCell>{conn.name}</TableCell>
-              <TableCell className="font-mono text-xs">{conn.url}</TableCell>
-              <TableCell>
-                {conn.bootstrap_status === "pending" ? (
-                  <Badge variant="destructive">
-                    {t("connections.bootstrap.setupRequired")}
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary">
-                    {t("connections.bootstrap.ready")}
-                  </Badge>
-                )}
-              </TableCell>
-              <TableCell>
-                {conn.schema_cached_at
-                  ? new Date(conn.schema_cached_at).toLocaleString()
-                  : "-"}
-              </TableCell>
-              <TableCell className="space-x-2">
-                {conn.bootstrap_status === "pending" && (
+      <div className="flex items-center gap-4">
+        <Input
+          placeholder={t("common.search")}
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className="max-w-sm"
+        />
+        <span className="text-sm text-muted-foreground">
+          {filtered.length} {t("table.rows")}
+        </span>
+      </div>
+
+      <div className="overflow-hidden rounded-xl border border-border/60">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/30 hover:bg-muted/30">
+              <TableHead>{t("connections.name")}</TableHead>
+              <TableHead>{t("connections.url")}</TableHead>
+              <TableHead>{t("connections.status")}</TableHead>
+              <TableHead>{t("connections.lastSynced")}</TableHead>
+              <TableHead>{t("common.actions")}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.map((conn) => (
+              <TableRow key={conn.id} className="hover:bg-muted/20">
+                <TableCell className="font-medium">{conn.name}</TableCell>
+                <TableCell className="max-w-[200px] truncate font-mono text-xs">
+                  {conn.url}
+                </TableCell>
+                <TableCell>
+                  {conn.bootstrap_status === "pending" ? (
+                    <StatusBadge
+                      status="pending"
+                      label={t("connections.bootstrap.setupRequired")}
+                    />
+                  ) : (
+                    <StatusBadge
+                      status="ready"
+                      label={t("connections.bootstrap.ready")}
+                    />
+                  )}
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {conn.schema_cached_at
+                    ? new Date(conn.schema_cached_at).toLocaleString()
+                    : "-"}
+                </TableCell>
+                <TableCell className="space-x-2">
+                  {conn.bootstrap_status === "pending" && (
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={() => openSetup(conn.id)}
+                    >
+                      {t("connections.bootstrap.setup")}
+                    </Button>
+                  )}
                   <Button
                     size="sm"
-                    variant="default"
-                    onClick={() => openSetup(conn.id)}
+                    variant="outline"
+                    onClick={() => syncSchema(conn.id)}
                   >
-                    {t("connections.bootstrap.setup")}
+                    {t("connections.syncSchema")}
                   </Button>
-                )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => syncSchema(conn.id)}
-                >
-                  {t("connections.syncSchema")}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => previewRls(conn.id)}
-                  disabled={conn.bootstrap_status !== "ready"}
-                >
-                  {t("connections.syncRls")}
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger
-                    render={<Button size="sm" variant="destructive" />}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => previewRls(conn.id)}
+                    disabled={conn.bootstrap_status !== "ready"}
                   >
-                    {t("common.delete")}
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>{t("common.confirm")}</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        {t("connections.deleteConfirm")}
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>
-                        {t("common.cancel")}
-                      </AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => deleteConnection(conn.id)}
-                      >
-                        {t("common.delete")}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+                    {t("connections.syncRls")}
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger
+                      render={<Button size="sm" variant="destructive" />}
+                    >
+                      {t("common.delete")}
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          {t("common.confirm")}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t("connections.deleteConfirm")}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>
+                          {t("common.cancel")}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => deleteConnection(conn.id)}
+                        >
+                          {t("common.delete")}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
       {activeId && (
         <TargetSetupDialog
@@ -205,7 +248,7 @@ export function ConnectionList({ connections }: ConnectionListProps) {
           <Textarea
             value={rlsSql}
             readOnly
-            className="font-mono text-xs min-h-[300px]"
+            className="min-h-[300px] font-mono text-xs"
           />
           <div className="flex gap-2">
             <Button onClick={applyRls}>{t("rls.apply")}</Button>

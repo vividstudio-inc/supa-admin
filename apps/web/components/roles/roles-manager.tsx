@@ -2,7 +2,7 @@
 
 import type { Connection, Role } from "@supa-admin/projections";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -55,6 +55,15 @@ export function RolesManager() {
     >
   >({});
 
+  const roleItems = useMemo(
+    () => Object.fromEntries(roles.map((r) => [r.id, r.name])),
+    [roles],
+  );
+  const connectionItems = useMemo(
+    () => Object.fromEntries(connections.map((c) => [c.id, c.name])),
+    [connections],
+  );
+
   useEffect(() => {
     orpcBrowser.roles.list().then((d) => setRoles(d.roles ?? []));
     orpcBrowser.connections
@@ -63,21 +72,63 @@ export function RolesManager() {
   }, []);
 
   useEffect(() => {
-    if (!selectedConnection) return;
-    orpcBrowser.connections.get({ id: selectedConnection }).then((d) => {
-      setTables(d.tables ?? []);
-      const perms: typeof permissions = {};
-      for (const tbl of d.tables ?? []) {
-        perms[tbl.table_name] = {
-          can_read: false,
-          can_create: false,
-          can_update: false,
-          can_delete: false,
-        };
+    if (!selectedConnection) {
+      setTables([]);
+      setPermissions({});
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadPermissionsMatrix() {
+      try {
+        const connData = await orpcBrowser.connections.get({
+          id: selectedConnection,
+        });
+        if (cancelled) return;
+
+        const tableList = connData.tables ?? [];
+        setTables(tableList);
+
+        const perms: typeof permissions = {};
+        for (const tbl of tableList) {
+          perms[tbl.table_name] = {
+            can_read: false,
+            can_create: false,
+            can_update: false,
+            can_delete: false,
+          };
+        }
+
+        if (selectedRole) {
+          const roleData = await orpcBrowser.roles.getPermissions({
+            roleId: selectedRole,
+            connectionId: selectedConnection,
+          });
+          if (cancelled) return;
+
+          for (const perm of roleData.permissions ?? []) {
+            perms[perm.table_name] = {
+              can_read: perm.can_read,
+              can_create: perm.can_create,
+              can_update: perm.can_update,
+              can_delete: perm.can_delete,
+            };
+          }
+        }
+
+        setPermissions(perms);
+      } catch (err) {
+        if (cancelled) return;
+        toast.error(err instanceof Error ? err.message : tCommon("error"));
       }
-      setPermissions(perms);
-    });
-  }, [selectedConnection]);
+    }
+
+    void loadPermissionsMatrix();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedConnection, selectedRole]);
 
   async function createRole() {
     try {
@@ -146,6 +197,7 @@ export function RolesManager() {
         <div className="space-y-2">
           <Label>{t("name")}</Label>
           <Select
+            items={roleItems}
             value={selectedRole}
             onValueChange={(v) => setSelectedRole(v ?? "")}
           >
@@ -162,13 +214,14 @@ export function RolesManager() {
           </Select>
         </div>
         <div className="space-y-2">
-          <Label>Connection</Label>
+          <Label>{t("connection")}</Label>
           <Select
+            items={connectionItems}
             value={selectedConnection}
             onValueChange={(v) => setSelectedConnection(v ?? "")}
           >
             <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Connection" />
+              <SelectValue placeholder={t("connection")} />
             </SelectTrigger>
             <SelectContent>
               {connections.map((c) => (
@@ -185,8 +238,8 @@ export function RolesManager() {
         <>
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Table</TableHead>
+              <TableRow className="bg-muted/30 hover:bg-muted/30">
+                <TableHead>{t("tableName")}</TableHead>
                 <TableHead>{t("canRead")}</TableHead>
                 <TableHead>{t("canCreate")}</TableHead>
                 <TableHead>{t("canUpdate")}</TableHead>
@@ -194,8 +247,11 @@ export function RolesManager() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tables.map((tbl) => (
-                <TableRow key={tbl.table_name}>
+              {tables.map((tbl, index) => (
+                <TableRow
+                  key={tbl.table_name}
+                  className={index % 2 === 1 ? "bg-muted/10" : undefined}
+                >
                   <TableCell>{tbl.table_name}</TableCell>
                   {(
                     [

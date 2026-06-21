@@ -68,9 +68,12 @@ export function DynamicForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {columns.map((col) => (
-        <div key={col.name} className="space-y-2">
+        <div
+          key={col.name}
+          className="space-y-2 rounded-lg border border-border/40 p-3"
+        >
           <Label>
             {col.name}
             <span className="text-xs text-muted-foreground ml-2">

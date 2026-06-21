@@ -6,6 +6,7 @@ import {
   ArrowUp,
   ChevronLeft,
   ChevronRight,
+  Database,
   Pencil,
   Plus,
   Trash2,
@@ -14,6 +15,8 @@ import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DynamicForm } from "@/components/dynamic-form/dynamic-form";
+import { EmptyState } from "@/components/patterns/empty-state";
+import { TableSkeleton } from "@/components/patterns/table-skeleton";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -207,139 +210,173 @@ export function DataTableCrud({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <Input
           placeholder={t("common.search")}
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
           className="max-w-sm"
         />
-        {permissions.can_create && (
+        <span className="text-sm text-muted-foreground">
+          {total} {t("table.rows")}
+        </span>
+        {permissions.can_create ? (
           <Button
+            className="ml-auto"
             onClick={() => {
               setEditRow(null);
               setFormOpen(true);
             }}
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="mr-2 size-4" />
             {t("table.createRow")}
           </Button>
-        )}
+        ) : null}
       </div>
 
-      <div className="rounded-md border overflow-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {displayColumns.map((col) => (
-                <TableHead key={col.name}>
-                  <button
-                    type="button"
-                    className="flex items-center gap-1 hover:underline"
-                    onClick={() => toggleSort(col.name)}
-                  >
-                    {col.name}
-                    {sortCol === col.name &&
-                      (sortAsc ? (
-                        <ArrowUp className="h-3 w-3" />
-                      ) : (
-                        <ArrowDown className="h-3 w-3" />
-                      ))}
-                  </button>
-                </TableHead>
-              ))}
-              <TableHead>{t("common.actions")}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={displayColumns.length + 1}>
-                  {t("common.loading")}
-                </TableCell>
-              </TableRow>
-            ) : rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={displayColumns.length + 1}>
-                  {t("table.noData")}
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((row, i) => (
-                <TableRow key={i}>
-                  {displayColumns.map((col) => (
-                    <TableCell
-                      key={col.name}
-                      className="max-w-[200px] truncate"
+      {loading && rows.length === 0 ? (
+        <TableSkeleton columns={displayColumns.length + 1} />
+      ) : !loading && rows.length === 0 && !search ? (
+        <EmptyState
+          icon={Database}
+          title={t("table.noData")}
+          description={t("table.emptyDescription")}
+          action={
+            permissions.can_create ? (
+              <Button
+                onClick={() => {
+                  setEditRow(null);
+                  setFormOpen(true);
+                }}
+              >
+                <Plus className="mr-2 size-4" />
+                {t("table.createRow")}
+              </Button>
+            ) : undefined
+          }
+        />
+      ) : (
+        <div className="overflow-hidden rounded-xl border border-border/60">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/30 hover:bg-muted/30">
+                {displayColumns.map((col) => (
+                  <TableHead key={col.name}>
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 hover:text-foreground"
+                      onClick={() => toggleSort(col.name)}
                     >
-                      {formatCell(row[col.name])}
-                    </TableCell>
-                  ))}
-                  <TableCell className="space-x-1">
-                    {permissions.can_update && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => {
-                          setEditRow(row);
-                          setFormOpen(true);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {permissions.can_delete && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => setDeleteRow(row)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
+                      {col.name}
+                      {sortCol === col.name &&
+                        (sortAsc ? (
+                          <ArrowUp className="size-3" />
+                        ) : (
+                          <ArrowDown className="size-3" />
+                        ))}
+                    </button>
+                  </TableHead>
+                ))}
+                <TableHead>{t("common.actions")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={displayColumns.length + 1}
+                    className="text-center text-muted-foreground"
+                  >
+                    {t("common.loading")}
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ) : rows.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={displayColumns.length + 1}
+                    className="text-center text-muted-foreground"
+                  >
+                    {t("table.noResults")}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                rows.map((row, i) => (
+                  <TableRow key={i} className="hover:bg-muted/20">
+                    {displayColumns.map((col) => (
+                      <TableCell
+                        key={col.name}
+                        className="max-w-[200px] truncate"
+                      >
+                        {formatCell(row[col.name])}
+                      </TableCell>
+                    ))}
+                    <TableCell className="space-x-1">
+                      {permissions.can_update ? (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditRow(row);
+                            setFormOpen(true);
+                          }}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                      ) : null}
+                      {permissions.can_delete ? (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => setDeleteRow(row)}
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      ) : null}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">
-          {total} {t("table.rows")}
-        </span>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            disabled={page === 0}
-            onClick={() => {
-              const p = page - 1;
-              setPage(p);
-              void loadData(p);
-            }}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="text-sm">
+      {rows.length > 0 || search ? (
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">
             {t("table.page")} {page + 1} {t("table.of")}{" "}
             {Math.max(totalPages, 1)}
           </span>
-          <Button
-            variant="outline"
-            size="icon"
-            disabled={page >= totalPages - 1}
-            onClick={() => {
-              const p = page + 1;
-              setPage(p);
-              void loadData(p);
-            }}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 0}
+              onClick={() => {
+                const p = page - 1;
+                setPage(p);
+                void loadData(p);
+              }}
+            >
+              <ChevronLeft className="mr-1 size-4" />
+              {t("common.back")}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages - 1}
+              onClick={() => {
+                const p = page + 1;
+                setPage(p);
+                void loadData(p);
+              }}
+            >
+              {t("table.next")}
+              <ChevronRight className="ml-1 size-4" />
+            </Button>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-auto">

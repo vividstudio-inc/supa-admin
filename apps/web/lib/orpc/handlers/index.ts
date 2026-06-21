@@ -445,6 +445,19 @@ export const rolesHandlers = os.roles.router({
     return { role: data };
   }),
 
+  getPermissions: os.roles.getPermissions
+    .use(withAdmin)
+    .handler(async ({ input }) => {
+      const supabase = await createMetaServerClient();
+      const { data, error } = await supabase
+        .from("role_permissions")
+        .select("table_name, can_read, can_create, can_update, can_delete")
+        .eq("role_id", input.roleId)
+        .eq("connection_id", input.connectionId);
+      if (error) throw new ORPCError("BAD_REQUEST", { message: error.message });
+      return { permissions: data ?? [] };
+    }),
+
   updatePermissions: os.roles.updatePermissions
     .use(withAdmin)
     .handler(async ({ input }) => {
