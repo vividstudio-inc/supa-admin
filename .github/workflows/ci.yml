@@ -57,9 +57,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: unit
-          files: |
-            packages/**/coverage/lcov.info
-            apps/web/coverage/lcov.info
+          files: packages/**/coverage/lcov.info,apps/web/coverage/lcov.info
           fail_ci_if_error: true
 
   test-integration:
@@ -89,7 +87,5 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: integration
-          files: |
-            packages/**/coverage/lcov.info
-            apps/web/coverage/lcov.info
+          files: packages/**/coverage/lcov.info,apps/web/coverage/lcov.info
           fail_ci_if_error: true
